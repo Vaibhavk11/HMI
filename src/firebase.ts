@@ -25,8 +25,15 @@ const requiredEnvVars = [
 
 const missingVars = requiredEnvVars.filter((varName) => !import.meta.env[varName]);
 if (missingVars.length > 0) {
-  console.error('Missing required environment variables:', missingVars);
-  console.error('Please copy .env.example to .env and fill in your Firebase config');
+  console.error('❌ Missing Firebase environment variables:', missingVars);
+  console.error('📋 Available env vars:', Object.keys(import.meta.env));
+  
+  if (import.meta.env.PROD) {
+    console.error('🔧 GitHub Secrets may not be configured. Check:', 
+      'https://github.com/Vaibhavk11/HMI/settings/secrets/actions');
+  } else {
+    console.error('📝 Please copy .env.example to .env and fill in your Firebase config');
+  }
 }
 
 // Initialize Firebase

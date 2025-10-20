@@ -9,7 +9,7 @@ import NoteEditor from './pages/NoteEditor';
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename="/HMI/">
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

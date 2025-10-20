@@ -61,7 +61,7 @@ export default defineConfig({
     }),
   ],
   // For GitHub Pages deployment - adjust base path if needed
-  base: './',
+  base: '/HMI/',
   test: {
     globals: true,
     environment: 'jsdom',
