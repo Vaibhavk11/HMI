@@ -26,6 +26,7 @@ const getNotesCollection = (uid: string) => {
 // Fetch all notes for a user
 export const fetchNotes = async (uid: string): Promise<Note[]> => {
   try {
+    console.log('🔍 Fetching notes for user:', uid);
     const notesRef = getNotesCollection(uid);
     const q = query(notesRef, orderBy('updatedAt', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -42,10 +43,20 @@ export const fetchNotes = async (uid: string): Promise<Note[]> => {
       };
     });
 
+    console.log('✅ Successfully fetched', notes.length, 'notes');
     return notes;
-  } catch (error) {
-    console.error('Error fetching notes:', error);
-    throw error;
+  } catch (error: any) {
+    console.error('❌ Error fetching notes:', error);
+    
+    if (error.code === 'permission-denied') {
+      throw new Error('Access denied. Please check Firestore security rules.');
+    } else if (error.code === 'not-found') {
+      throw new Error('Firestore database not found. Please set up Firestore in Firebase Console.');
+    } else if (error.code === 'unavailable') {
+      throw new Error('Firestore service unavailable. Please check your internet connection.');
+    } else {
+      throw new Error(`Failed to load notes: ${error.message || 'Unknown error'}`);
+    }
   }
 };
 

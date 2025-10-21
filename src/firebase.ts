@@ -35,6 +35,13 @@ if (missingVars.length > 0) {
   } else {
     console.error('📝 Please copy .env.example to .env and fill in your Firebase config');
   }
+} else {
+  console.log('✅ Firebase environment variables loaded successfully');
+  console.log('🔥 Firebase Config:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    hasApiKey: !!firebaseConfig.apiKey
+  });
 }
 
 // Initialize Firebase
