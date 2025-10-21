@@ -2,6 +2,7 @@ import React from 'react';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import BottomNav from '../components/BottomNav';
 import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
@@ -201,14 +202,20 @@ const Dashboard: React.FC = () => {
               <div className="font-medium text-gray-800">Notes</div>
               <div className="text-sm text-gray-500">Track your progress</div>
             </Link>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center opacity-50 cursor-not-allowed">
+            <Link
+              to="/progress"
+              className="bg-white border border-gray-200 rounded-lg p-4 text-center hover:shadow-md transition-shadow"
+            >
               <div className="text-3xl mb-2">📊</div>
-              <div className="font-medium text-gray-500">Progress</div>
-              <div className="text-sm text-gray-400">Coming soon</div>
-            </div>
+              <div className="font-medium text-gray-800">Progress</div>
+              <div className="text-sm text-gray-500">View statistics</div>
+            </Link>
           </div>
         </section>
       </div>
+      
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 };

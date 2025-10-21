@@ -5,6 +5,7 @@ import { fetchNotes, deleteNote } from '../utils/firestore';
 import { Note } from '../types';
 import NoteCard from '../components/NoteCard';
 import Header from '../components/Header';
+import BottomNav from '../components/BottomNav';
 
 const Notes: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -135,6 +136,9 @@ const Notes: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Bottom Navigation */}
+      <BottomNav />
     </>
   );
 };

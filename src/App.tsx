@@ -10,6 +10,7 @@ import NoteEditor from './pages/NoteEditor';
 import Dashboard from './pages/Dashboard';
 import ActiveWorkout from './pages/ActiveWorkout';
 import WorkoutComplete from './pages/WorkoutComplete';
+import Progress from './pages/Progress';
 
 const App: React.FC = () => {
   return (
@@ -55,6 +56,14 @@ const App: React.FC = () => {
                 <WorkoutProvider>
                   <WorkoutComplete />
                 </WorkoutProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/progress"
+            element={
+              <ProtectedRoute>
+                <Progress />
               </ProtectedRoute>
             }
           />
