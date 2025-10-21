@@ -28,7 +28,7 @@ const WorkoutComplete: React.FC = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await completeWorkout(notes);
+      await completeWorkout(notes, rating);
       // completeWorkout will navigate to dashboard
     } catch (error) {
       console.error('Failed to complete workout:', error);

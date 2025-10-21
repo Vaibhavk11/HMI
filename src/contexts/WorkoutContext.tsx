@@ -9,6 +9,12 @@ import {
   ExerciseCompletion
 } from '../types/workout';
 import { twelveWeekProgram, getWorkoutByWeekAndDay } from '../data/workoutProgram';
+import { 
+  saveWorkoutLog, 
+  updateUserProgress,
+  getUserProgress,
+  initializeUserProgress 
+} from '../utils/firestore';
 
 interface WorkoutContextType {
   program: WorkoutProgram | null;
@@ -29,7 +35,7 @@ interface WorkoutContextType {
   completeExercise: (exerciseId: string, data: { reps?: number; duration?: number; sets?: number }) => void;
   skipExercise: () => void;
   previousExercise: () => void;
-  completeWorkout: (notes?: string) => Promise<void>;
+  completeWorkout: (notes?: string, rating?: number) => Promise<void>;
   setCurrentWeek: (week: number) => void;
 }
 
@@ -66,6 +72,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Load the 12-week program
         setProgram(twelveWeekProgram);
+        
+        // Check if user has progress data, if not initialize it
+        const userProgress = await getUserProgress(user.uid);
+        if (!userProgress) {
+          await initializeUserProgress(user.uid);
+        }
         
         // Get today's workout based on current day of week
         const today = new Date();
@@ -173,7 +185,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
   
   // Complete the entire workout
-  const completeWorkout = async (notes?: string) => {
+  const completeWorkout = async (notes?: string, rating?: number) => {
     if (!user || !todaysWorkout || !workoutStartTime) {
       console.error('Cannot complete workout: missing required data');
       return;
@@ -182,18 +194,38 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const endTime = new Date();
       
-      // In a real app, we would save this to Firestore
-      console.log('Workout completed:', {
-        userId: user.uid,
-        workout: todaysWorkout.dayName,
-        week: currentWeek,
+      // Prepare workout log data
+      const sections = todaysWorkout.sections.map(section => ({
+        type: section.type,
+        exercises: section.exercises
+          .filter(ex => completedExercises.has(ex.id))
+          .map(ex => {
+            const data = exerciseData.get(ex.id);
+            return data || {
+              exerciseId: ex.id,
+              sets: [],
+            };
+          }),
+      }));
+      
+      // Save workout log to Firestore
+      console.log('💾 Saving workout to Firestore...');
+      const workoutLogId = await saveWorkoutLog(user.uid, {
+        programId: twelveWeekProgram.id,
+        weekNumber: currentWeek,
+        dayNumber: todaysWorkout.dayNumber,
         startTime: workoutStartTime,
         endTime,
-        duration: (endTime.getTime() - workoutStartTime.getTime()) / 1000,
-        completedExercises: Array.from(completedExercises),
-        exerciseData: Object.fromEntries(exerciseData),
-        notes
+        sections,
+        notes,
+        rating,
       });
+      
+      // Update user progress
+      console.log('📈 Updating user progress...');
+      await updateUserProgress(user.uid, workoutLogId, currentWeek, todaysWorkout.dayNumber);
+      
+      console.log('✅ Workout completed and saved:', workoutLogId);
       
       // Reset workout state
       setIsWorkoutActive(false);
@@ -207,8 +239,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      console.error('Failed to complete workout:', err);
+      console.error('❌ Failed to complete workout:', err);
       setError('Failed to save workout. Please try again.');
+      throw err;
     }
   };
   
