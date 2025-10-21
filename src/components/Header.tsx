@@ -18,8 +18,9 @@ const Header: React.FC = () => {
   return (
     <header className="bg-blue-500 text-white shadow-lg">
       <div className="container-mobile flex items-center justify-between py-4">
-        <Link to="/" className="text-xl font-bold">
-          📝 Notes
+        <Link to="/dashboard" className="text-xl font-bold flex items-center gap-2">
+          <span>�</span>
+          <span>Workout Tracker</span>
         </Link>
         {user && (
           <div className="flex items-center gap-4">
