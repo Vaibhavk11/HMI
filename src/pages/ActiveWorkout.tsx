@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../contexts/WorkoutContext';
+import { voiceService } from '../utils/voiceService';
+import VoiceSettingsModal from '../components/VoiceSettingsModal';
 
 const ActiveWorkout: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +26,9 @@ const ActiveWorkout: React.FC = () => {
   const [completedSets, setCompletedSets] = useState<number>(0);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState<boolean>(false);
+  const [restTimer, setRestTimer] = useState<number>(0);
+  const [isResting, setIsResting] = useState<boolean>(false);
   
   // Redirect if workout isn't active
   useEffect(() => {
@@ -40,6 +45,11 @@ const ActiveWorkout: React.FC = () => {
       setCompletedSets(0);
       setTimer(0);
       setIsTimerActive(false);
+      setIsResting(false);
+      setRestTimer(0);
+      
+      // Announce new exercise start
+      voiceService.announceExerciseStart(currentExercise.name, 1);
     }
   }, [currentExercise]);
   
@@ -69,6 +79,35 @@ const ActiveWorkout: React.FC = () => {
     return () => clearInterval(interval);
   }, [workoutStartTime]);
   
+  // Rest timer countdown
+  useEffect(() => {
+    if (!isResting || restTimer <= 0) return;
+    
+    const interval = setInterval(() => {
+      setRestTimer(prev => {
+        const newTime = prev - 1;
+        
+        // Voice announcements at specific intervals
+        if (newTime === 10) {
+          voiceService.announceRestEnding(10);
+        } else if (newTime === 5) {
+          voiceService.announceRestEnding(5);
+        } else if (newTime === 3) {
+          voiceService.announceRestEnding(3);
+        } else if (newTime === 0) {
+          setIsResting(false);
+          if (currentExercise) {
+            voiceService.announceExerciseStart(currentExercise.name, currentSet);
+          }
+        }
+        
+        return newTime;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isResting, restTimer, currentExercise, currentSet]);
+  
   // Define handleCompleteSet with useCallback
   const handleCompleteSet = useCallback(() => {
     if (!currentExercise) return;
@@ -76,12 +115,28 @@ const ActiveWorkout: React.FC = () => {
     const totalSets = currentExercise.defaultSets || 1;
     
     if (currentSet < totalSets) {
+      // Announce set completion
+      voiceService.announceSetComplete(currentSet, totalSets);
+      
       // Move to next set
       setCompletedSets(currentSet);
       setCurrentSet(currentSet + 1);
       setTimer(0);
       setIsTimerActive(false);
+      
+      // Start rest timer if rest period is defined
+      if (currentExercise.restBetweenSets) {
+        setIsResting(true);
+        setRestTimer(currentExercise.restBetweenSets);
+        voiceService.announceRestStart(currentExercise.restBetweenSets);
+      } else {
+        // Announce next set immediately if no rest
+        voiceService.announceExerciseStart(currentExercise.name, currentSet + 1);
+      }
     } else {
+      // Announce exercise completion
+      voiceService.announceExerciseComplete(currentExercise.name);
+      
       // All sets complete, move to next exercise
       completeExercise(currentExercise.id, {
         reps: currentExercise.mechanic === 'reps' ? reps : undefined,
@@ -145,9 +200,18 @@ const ActiveWorkout: React.FC = () => {
                 Exercise {completedExercises + 1} of {totalExercises}
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-blue-600">{formatTime(elapsedTime)}</div>
-              <div className="text-xs text-gray-500">Total Time</div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowVoiceSettings(true)}
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors"
+                title="Voice Settings"
+              >
+                🎙️
+              </button>
+              <div className="text-right">
+                <div className="text-sm font-medium text-blue-600">{formatTime(elapsedTime)}</div>
+                <div className="text-xs text-gray-500">Total Time</div>
+              </div>
             </div>
           </div>
           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
@@ -161,6 +225,17 @@ const ActiveWorkout: React.FC = () => {
       
       {/* Exercise Content */}
       <div className="max-w-xl mx-auto p-4">
+        {/* Rest Timer Banner */}
+        {isResting && restTimer > 0 && (
+          <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 mb-4 text-center animate-pulse">
+            <div className="text-yellow-800 font-bold text-lg mb-1">⏸️ Rest Period</div>
+            <div className="text-4xl font-bold text-yellow-600 mb-1">{restTimer}s</div>
+            <div className="text-sm text-yellow-700">
+              Prepare for set {currentSet}
+            </div>
+          </div>
+        )}
+        
         <div className="bg-white rounded-lg shadow-md p-6 mb-4">
           {/* Exercise Name */}
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
@@ -350,6 +425,12 @@ const ActiveWorkout: React.FC = () => {
           </button>
         </div>
       </div>
+      
+      {/* Voice Settings Modal */}
+      <VoiceSettingsModal 
+        isOpen={showVoiceSettings} 
+        onClose={() => setShowVoiceSettings(false)} 
+      />
     </div>
   );
 };
