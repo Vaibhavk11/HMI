@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { GoogleAuthProvider } from 'firebase/auth';
 
 // Firebase configuration from environment variables
 // Security note: These are public config values - actual security is enforced by Firestore rules
@@ -42,5 +43,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Initialize Google Auth Provider
+export const googleProvider = new GoogleAuthProvider();
 
 export default app;

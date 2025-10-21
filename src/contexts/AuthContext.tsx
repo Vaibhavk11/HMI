@@ -2,11 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, googleProvider } from '../firebase';
 import { User, AuthContextType } from '../types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
         });
       } else {
         setUser(null);
@@ -56,6 +59,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to login with Google');
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -68,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     login,
+    loginWithGoogle,
     register,
     logout,
   };

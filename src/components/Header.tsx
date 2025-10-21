@@ -23,7 +23,31 @@ const Header: React.FC = () => {
         </Link>
         {user && (
           <div className="flex items-center gap-4">
-            <span className="text-sm truncate max-w-[150px]">{user.email}</span>
+            <div className="flex items-center gap-2">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full border-2 border-white/20"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <span className="text-sm font-semibold">
+                    {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-col">
+                {user.displayName && (
+                  <span className="text-sm font-medium truncate max-w-[120px]">
+                    {user.displayName}
+                  </span>
+                )}
+                <span className="text-xs opacity-80 truncate max-w-[120px]">
+                  {user.email}
+                </span>
+              </div>
+            </div>
             <button onClick={handleLogout} className="text-sm hover:underline">
               Logout
             </button>
