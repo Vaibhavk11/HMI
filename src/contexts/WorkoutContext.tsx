@@ -67,6 +67,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isTodayCompleted, setIsTodayCompleted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
   
   // Load program and today's workout
   useEffect(() => {
@@ -77,6 +78,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       
       try {
+        console.log('🔄 Loading workout data for week:', currentWeek);
         setLoading(true);
         setError(null);
         
@@ -90,11 +92,20 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
           // Fetch again after initialization
           const newProgress = await getUserProgress(user.uid);
           setUserProgress(newProgress);
+          if (isInitialLoad && newProgress?.currentWeek) {
+            setCurrentWeekState(newProgress.currentWeek);
+            setIsInitialLoad(false);
+          }
         } else {
           setUserProgress(progress);
-          // Set current week from user progress if available
-          if (progress.currentWeek) {
+          // Only set current week from user progress on initial load
+          // Don't override when user manually changes weeks with Prev/Next buttons
+          if (isInitialLoad && progress.currentWeek) {
+            console.log('📊 Initial load: Setting week from user progress:', progress.currentWeek);
             setCurrentWeekState(progress.currentWeek);
+            setIsInitialLoad(false);
+          } else {
+            console.log('📊 User progress shows week:', progress.currentWeek, 'but keeping currentWeek state at:', currentWeek);
           }
         }
         
@@ -102,7 +113,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const today = new Date();
         const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay(); // Convert Sunday (0) to 7
         
+        console.log('📅 Fetching workout for week', currentWeek, 'day', dayOfWeek);
         const workout = getWorkoutByWeekAndDay(currentWeek, dayOfWeek);
+        console.log('💪 Loaded workout:', workout?.id, workout?.description);
+        console.log('🏋️ Main exercises:', workout?.sections.find(s => s.type === 'main')?.exercises.map(e => `${e.name} (${e.defaultReps || '?'}×${e.defaultSets || '?'})`));
         setTodaysWorkout(workout);
         
         // Check if today's workout is already completed
@@ -124,7 +138,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     
     loadWorkoutData();
-  }, [user, currentWeek]);
+  }, [user, currentWeek, isInitialLoad]);
   
   // Get current exercise
   const currentExercise = currentSection?.exercises[currentExerciseIndex] || null;

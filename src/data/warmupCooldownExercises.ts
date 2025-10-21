@@ -13,7 +13,6 @@ export const warmupExercises: Exercise[] = [
       'Include flexion/extension and lateral flexion movements',
       'Keep movements smooth and controlled'
     ],
-    imageUrl: '/exercises/neck-rotations.jpg',
     defaultReps: 10,
     defaultSets: 1,
     targetMuscles: ['neck', 'trapezius']
@@ -29,7 +28,6 @@ export const warmupExercises: Exercise[] = [
       'Keep the motion smooth and rhythmic',
       'Gradually increase range of motion'
     ],
-    imageUrl: '/exercises/arm-swings.jpg',
     defaultReps: 15,
     defaultSets: 1,
     targetMuscles: ['shoulders', 'chest']
@@ -45,7 +43,6 @@ export const warmupExercises: Exercise[] = [
       'Do 10 circles forward, then 10 circles backward',
       'Keep the movement smooth and controlled'
     ],
-    imageUrl: '/exercises/shoulder-circumduction.jpg',
     defaultReps: 20,
     defaultSets: 1,
     targetMuscles: ['shoulders', 'upper back']
@@ -61,7 +58,6 @@ export const warmupExercises: Exercise[] = [
       'Open arms back to starting position',
       'Repeat in a controlled, rhythmic manner'
     ],
-    imageUrl: '/exercises/dynamic-chest-stretch.jpg',
     defaultReps: 15,
     defaultSets: 1,
     targetMuscles: ['chest', 'shoulders']
@@ -77,7 +73,6 @@ export const warmupExercises: Exercise[] = [
       'Return to center and bend to the other side',
       'Keep movements controlled and avoid leaning forward or backward'
     ],
-    imageUrl: '/exercises/side-bends.jpg',
     defaultReps: 20,
     defaultSets: 1,
     targetMuscles: ['obliques', 'core']
@@ -93,7 +88,6 @@ export const warmupExercises: Exercise[] = [
       'Rotate torso and touch opposite hand to opposite foot',
       'Alternate sides in a controlled manner'
     ],
-    imageUrl: '/exercises/windmill.jpg',
     defaultReps: 20,
     defaultSets: 1,
     targetMuscles: ['core', 'hamstrings', 'shoulders']
@@ -109,7 +103,6 @@ export const warmupExercises: Exercise[] = [
       'Then drop your belly and lift your head (camel position)',
       'Move slowly between positions with control'
     ],
-    imageUrl: '/exercises/cat-camel.jpg',
     defaultReps: 15,
     defaultSets: 1,
     targetMuscles: ['spine', 'core']
@@ -125,7 +118,6 @@ export const warmupExercises: Exercise[] = [
       'Make controlled circular movements',
       'Switch legs after completing reps'
     ],
-    imageUrl: '/exercises/hip-flexion-rotation.jpg',
     defaultReps: 10,
     defaultSets: 1,
     targetMuscles: ['hips', 'hip flexors']
@@ -141,7 +133,6 @@ export const warmupExercises: Exercise[] = [
       'Keep the movement controlled',
       'Complete reps then switch legs'
     ],
-    imageUrl: '/exercises/leg-swings-front-back.jpg',
     defaultReps: 15,
     defaultSets: 1,
     targetMuscles: ['hip flexors', 'hamstrings']
@@ -157,7 +148,6 @@ export const warmupExercises: Exercise[] = [
       'Keep the movement controlled',
       'Complete reps then switch legs'
     ],
-    imageUrl: '/exercises/leg-swings-side.jpg',
     defaultReps: 15,
     defaultSets: 1,
     targetMuscles: ['hip abductors', 'hip adductors']
@@ -173,7 +163,6 @@ export const warmupExercises: Exercise[] = [
       'Hold briefly, feeling the stretch in your hip',
       'Return to plank and alternate sides'
     ],
-    imageUrl: '/exercises/spider-lunges.jpg',
     defaultReps: 10,
     defaultSets: 1,
     targetMuscles: ['hip flexors', 'groin', 'core']
@@ -189,7 +178,6 @@ export const warmupExercises: Exercise[] = [
       'Pump arms in a running motion',
       'Maintain a quick, steady pace'
     ],
-    imageUrl: '/exercises/high-knees.jpg',
     defaultDuration: 90, // 1.5 minutes
     defaultSets: 1,
     targetMuscles: ['quadriceps', 'hip flexors', 'cardiovascular']
@@ -209,7 +197,6 @@ export const cooldownExercises: Exercise[] = [
       'Hold the position and breathe deeply',
       'Try to relax into the stretch, do not force'
     ],
-    imageUrl: '/exercises/seated-forward-bend.jpg',
     defaultDuration: 30, // 30 seconds
     defaultSets: 2,
     targetMuscles: ['hamstrings', 'lower back', 'calves']
@@ -226,7 +213,6 @@ export const cooldownExercises: Exercise[] = [
       'You can lean forward for a deeper stretch',
       'Breathe deeply and relax'
     ],
-    imageUrl: '/exercises/bound-angle-pose.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['hips', 'inner thighs', 'groin']
@@ -243,7 +229,6 @@ export const cooldownExercises: Exercise[] = [
       'Look forward or slightly up',
       'Hold the position and breathe deeply'
     ],
-    imageUrl: '/exercises/cobra-pose.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['chest', 'abs', 'lower back']
@@ -260,7 +245,6 @@ export const cooldownExercises: Exercise[] = [
       'Hold the stretch, then switch sides',
       'Feel the stretch along the side of your body'
     ],
-    imageUrl: '/exercises/standing-side-bend.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['obliques', 'intercostals', 'lats']
@@ -277,7 +261,6 @@ export const cooldownExercises: Exercise[] = [
       'Pull shoulders back and lift chest',
       'Hold the stretch and breathe deeply'
     ],
-    imageUrl: '/exercises/pec-stretch-behind-back.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['chest', 'shoulders', 'biceps']
@@ -294,7 +277,6 @@ export const cooldownExercises: Exercise[] = [
       'Feel the stretch across your chest',
       'Hold, then switch sides'
     ],
-    imageUrl: '/exercises/doorway-pec-stretch.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['chest', 'shoulders']
@@ -311,7 +293,6 @@ export const cooldownExercises: Exercise[] = [
       'Pull feet away from hands to deepen the stretch',
       'Breathe deeply and hold'
     ],
-    imageUrl: '/exercises/bow-pose.jpg',
     defaultDuration: 30,
     defaultSets: 2,
     targetMuscles: ['chest', 'abs', 'quadriceps', 'shoulders']

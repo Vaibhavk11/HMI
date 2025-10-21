@@ -1,71 +1,74 @@
 import { WorkoutProgram, DayWorkout } from '../types/workout';
 import { warmupExercises, cooldownExercises } from './warmupCooldownExercises';
-import { mainExercises } from './mainExercises';
+import { weeklyWorkoutConfigs } from './weeklyWorkoutConfigs';
 
-// Helper to find exercise by ID
-const findExercise = (id: string) => {
-  return mainExercises.find(ex => ex.id === id);
+// Create strength day workout with week-specific exercises
+const createStrengthDay = (weekNum: number, dayNum: number, dayName: string): DayWorkout => {
+  const weekConfig = weeklyWorkoutConfigs.get(weekNum);
+  if (!weekConfig) {
+    throw new Error(`No workout configuration found for week ${weekNum}`);
+  }
+
+  return {
+    id: `week-${weekNum}-day-${dayNum}`,
+    dayName,
+    dayNumber: dayNum,
+    description: weekNum >= 4 
+      ? `Full-body strength training with weights (Week ${weekNum})`
+      : `Full-body strength training (Week ${weekNum})`,
+    isRestDay: false,
+    sections: [
+      {
+        type: 'warmup',
+        title: 'Warm Up',
+        exercises: warmupExercises
+      },
+      {
+        type: 'main',
+        title: 'Main Workout',
+        exercises: weekConfig.strength
+      },
+      {
+        type: 'cooldown',
+        title: 'Cool Down',
+        exercises: cooldownExercises
+      }
+    ]
+  };
 };
 
-// Create strength day workout (Mon, Wed, Fri)
-const createStrengthDay = (weekNum: number, dayNum: number, dayName: string): DayWorkout => ({
-  id: `week-${weekNum}-day-${dayNum}`,
-  dayName,
-  dayNumber: dayNum,
-  description: 'Full-body strength training',
-  isRestDay: false,
-  sections: [
-    {
-      type: 'warmup',
-      title: 'Warm Up',
-      exercises: warmupExercises
-    },
-    {
-      type: 'main',
-      title: 'Main Workout',
-      exercises: [
-        findExercise('exercise-free-squats')!,
-        findExercise('exercise-single-leg-calf-raise')!,
-        findExercise('exercise-inverted-rows')!,
-        findExercise('exercise-push-ups')!,
-        findExercise('exercise-prone-alternate-arm-leg-raise')!,
-        findExercise('exercise-partial-crunches')!,
-        findExercise('exercise-grip-and-hang')!
-      ]
-    },
-    {
-      type: 'cooldown',
-      title: 'Cool Down',
-      exercises: cooldownExercises
-    }
-  ]
-});
+// Create cardio day workout with week-specific duration
+const createCardioDay = (weekNum: number, dayNum: number, dayName: string): DayWorkout => {
+  const weekConfig = weeklyWorkoutConfigs.get(weekNum);
+  if (!weekConfig) {
+    throw new Error(`No workout configuration found for week ${weekNum}`);
+  }
 
-// Create cardio day workout (Tue, Thu, Sat)
-const createCardioDay = (weekNum: number, dayNum: number, dayName: string): DayWorkout => ({
-  id: `week-${weekNum}-day-${dayNum}`,
-  dayName,
-  dayNumber: dayNum,
-  description: 'Cardio day - Jogging',
-  isRestDay: false,
-  sections: [
-    {
-      type: 'warmup',
-      title: 'Warm Up',
-      exercises: warmupExercises
-    },
-    {
-      type: 'main',
-      title: 'Main Workout',
-      exercises: [findExercise('exercise-jogging')!]
-    },
-    {
-      type: 'cooldown',
-      title: 'Cool Down',
-      exercises: cooldownExercises
-    }
-  ]
-});
+  return {
+    id: `week-${weekNum}-day-${dayNum}`,
+    dayName,
+    dayNumber: dayNum,
+    description: `Cardio day - Jogging (Week ${weekNum})`,
+    isRestDay: false,
+    sections: [
+      {
+        type: 'warmup',
+        title: 'Warm Up',
+        exercises: warmupExercises
+      },
+      {
+        type: 'main',
+        title: 'Main Workout',
+        exercises: weekConfig.cardio
+      },
+      {
+        type: 'cooldown',
+        title: 'Cool Down',
+        exercises: cooldownExercises
+      }
+    ]
+  };
+};
 
 // Create rest day (Sunday)
 const createRestDay = (weekNum: number): DayWorkout => ({
