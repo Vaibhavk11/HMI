@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Firebase configuration from environment variables
 // Security note: These are public config values - actual security is enforced by Firestore rules
@@ -24,23 +24,31 @@ const requiredEnvVars = [
 ];
 
 const missingVars = requiredEnvVars.filter((varName) => !import.meta.env[varName]);
-if (missingVars.length > 0) {
-  console.error('❌ Missing Firebase environment variables:', missingVars);
-  console.error('📋 Available env vars:', Object.keys(import.meta.env));
+const isConfigured = missingVars.length === 0;
+
+if (!isConfigured) {
+  console.warn('⚠️ Missing Firebase environment variables:', missingVars);
+  console.warn('The app will display a configuration page instead.');
   
   if (import.meta.env.PROD) {
-    console.error('🔧 GitHub Secrets may not be configured. Check:', 
+    console.warn('🔧 GitHub Secrets may not be configured. Check:', 
       'https://github.com/Vaibhavk11/HMI/settings/secrets/actions');
   } else {
-    console.error('📝 Please copy .env.example to .env and fill in your Firebase config');
+    console.warn('📝 Please copy .env.example to .env and fill in your Firebase config');
   }
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if configured
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 
-// Initialize Firebase Authentication and Firestore
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+if (isConfigured) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
 
+// Export with proper types
+export { auth, db };
 export default app;

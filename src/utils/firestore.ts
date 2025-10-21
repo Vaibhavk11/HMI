@@ -20,6 +20,9 @@ const timestampToDate = (timestamp: { seconds: number; nanoseconds: number }): D
 
 // Get user's notes collection reference
 const getNotesCollection = (uid: string) => {
+  if (!db) {
+    throw new Error('Firebase is not configured');
+  }
   return collection(db, 'users', uid, 'notes');
 };
 
@@ -76,6 +79,9 @@ export const updateNote = async (
   noteData: Partial<NoteInput>
 ): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firebase is not configured');
+    }
     const noteRef = doc(db, 'users', uid, 'notes', noteId);
     await updateDoc(noteRef, {
       ...noteData,
@@ -90,6 +96,9 @@ export const updateNote = async (
 // Delete a note
 export const deleteNote = async (uid: string, noteId: string): Promise<void> => {
   try {
+    if (!db) {
+      throw new Error('Firebase is not configured');
+    }
     const noteRef = doc(db, 'users', uid, 'notes', noteId);
     await deleteDoc(noteRef);
   } catch (error) {
@@ -101,6 +110,9 @@ export const deleteNote = async (uid: string, noteId: string): Promise<void> => 
 // Get a single note by ID
 export const getNote = async (uid: string, noteId: string): Promise<Note | null> => {
   try {
+    if (!db) {
+      throw new Error('Firebase is not configured');
+    }
     const noteRef = doc(db, 'users', uid, 'notes', noteId);
     const noteSnap = await getDoc(noteRef);
 
