@@ -6,14 +6,17 @@ import {
   DayWorkout, 
   WorkoutSection, 
   Exercise,
-  ExerciseCompletion
+  ExerciseCompletion,
+  UserProgress
 } from '../types/workout';
 import { twelveWeekProgram, getWorkoutByWeekAndDay } from '../data/workoutProgram';
 import { 
   saveWorkoutLog, 
   updateUserProgress,
   getUserProgress,
-  initializeUserProgress 
+  initializeUserProgress,
+  isTodaysWorkoutCompleted,
+  deleteTodaysWorkoutLogs
 } from '../utils/firestore';
 
 interface WorkoutContextType {
@@ -30,6 +33,8 @@ interface WorkoutContextType {
   loading: boolean;
   error: string | null;
   currentWeek: number;
+  userProgress: UserProgress | null;
+  isTodayCompleted: boolean;
   
   startWorkout: () => void;
   completeExercise: (exerciseId: string, data: { reps?: number; duration?: number; sets?: number }) => void;
@@ -37,6 +42,9 @@ interface WorkoutContextType {
   previousExercise: () => void;
   completeWorkout: (notes?: string, rating?: number) => Promise<void>;
   setCurrentWeek: (week: number) => void;
+  refreshProgress: () => Promise<void>;
+  checkTodayCompleted: () => Promise<void>;
+  resetTodaysWorkout: () => Promise<void>;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -55,6 +63,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
   const [exerciseData, setExerciseData] = useState<Map<string, ExerciseCompletion>>(new Map());
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const [isTodayCompleted, setIsTodayCompleted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -74,9 +84,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setProgram(twelveWeekProgram);
         
         // Check if user has progress data, if not initialize it
-        const userProgress = await getUserProgress(user.uid);
-        if (!userProgress) {
+        const progress = await getUserProgress(user.uid);
+        if (!progress) {
           await initializeUserProgress(user.uid);
+          // Fetch again after initialization
+          const newProgress = await getUserProgress(user.uid);
+          setUserProgress(newProgress);
+        } else {
+          setUserProgress(progress);
+          // Set current week from user progress if available
+          if (progress.currentWeek) {
+            setCurrentWeekState(progress.currentWeek);
+          }
         }
         
         // Get today's workout based on current day of week
@@ -85,6 +104,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         const workout = getWorkoutByWeekAndDay(currentWeek, dayOfWeek);
         setTodaysWorkout(workout);
+        
+        // Check if today's workout is already completed
+        if (workout && !workout.isRestDay) {
+          const completed = await isTodaysWorkoutCompleted(
+            user.uid,
+            currentWeek,
+            dayOfWeek
+          );
+          setIsTodayCompleted(completed);
+        }
         
         setLoading(false);
       } catch (err) {
@@ -236,11 +265,87 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCompletedExercises(new Set());
       setExerciseData(new Map());
       
+      // Refresh user progress to update UI
+      await refreshProgress();
+      
+      // Mark today as completed
+      await checkTodayCompleted();
+      
       // Navigate to dashboard
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       console.error('❌ Failed to complete workout:', err);
       setError('Failed to save workout. Please try again.');
+      throw err;
+    }
+  };
+  
+  // Refresh user progress from Firestore
+  const refreshProgress = async () => {
+    if (!user) return;
+    
+    try {
+      const progress = await getUserProgress(user.uid);
+      setUserProgress(progress);
+      
+      // Update current week if progress has it
+      if (progress?.currentWeek) {
+        setCurrentWeekState(progress.currentWeek);
+      }
+    } catch (err) {
+      console.error('Failed to refresh progress:', err);
+    }
+  };
+  
+  // Check if today's workout is already completed
+  const checkTodayCompleted = async () => {
+    if (!user || !todaysWorkout) return;
+    
+    try {
+      const today = new Date();
+      const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+      
+      const completed = await isTodaysWorkoutCompleted(
+        user.uid,
+        currentWeek,
+        dayOfWeek
+      );
+      setIsTodayCompleted(completed);
+    } catch (err) {
+      console.error('Failed to check today completed:', err);
+    }
+  };
+  
+  // Reset today's workout (delete logs and mark as incomplete)
+  const resetTodaysWorkout = async () => {
+    if (!user || !todaysWorkout) return;
+    
+    try {
+      const today = new Date();
+      const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+      
+      console.log('🔄 Resetting today\'s workout...');
+      
+      // Delete all workout logs for today
+      const deletedCount = await deleteTodaysWorkoutLogs(
+        user.uid,
+        currentWeek,
+        dayOfWeek
+      );
+      
+      if (deletedCount > 0) {
+        // Mark as not completed
+        setIsTodayCompleted(false);
+        
+        // Refresh progress to update stats
+        await refreshProgress();
+        
+        console.log('✅ Workout reset successfully');
+      } else {
+        console.log('ℹ️ No workout logs found to delete');
+      }
+    } catch (err) {
+      console.error('❌ Failed to reset workout:', err);
       throw err;
     }
   };
@@ -266,13 +371,18 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loading,
     error,
     currentWeek,
+    userProgress,
+    isTodayCompleted,
     
     startWorkout,
     completeExercise,
     skipExercise,
     previousExercise,
     completeWorkout,
-    setCurrentWeek
+    setCurrentWeek,
+    refreshProgress,
+    checkTodayCompleted,
+    resetTodaysWorkout
   };
   
   return (

@@ -34,8 +34,9 @@ const Register: React.FC = () => {
       setLoading(true);
       await register(email, password);
       navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -47,8 +48,9 @@ const Register: React.FC = () => {
       setLoading(true);
       await loginWithGoogle();
       navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to sign in with Google');
     } finally {
       setLoading(false);
     }

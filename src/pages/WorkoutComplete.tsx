@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../contexts/WorkoutContext';
 
@@ -9,8 +9,8 @@ const WorkoutComplete: React.FC = () => {
   const [rating, setRating] = useState<number>(3);
   const [submitting, setSubmitting] = useState<boolean>(false);
   
-  // Calculate workout duration
-  const calculateDuration = (): string => {
+  // Calculate workout duration ONCE when component mounts - it won't change on re-renders
+  const workoutDuration = useMemo((): string => {
     if (!workoutStartTime) return '00:00';
     
     const now = new Date();
@@ -23,7 +23,7 @@ const WorkoutComplete: React.FC = () => {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, [workoutStartTime]); // Only recalculate if workoutStartTime changes (which it won't)
   
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -61,7 +61,7 @@ const WorkoutComplete: React.FC = () => {
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
                 <span className="text-gray-600">Duration:</span>
-                <span className="font-semibold">{calculateDuration()}</span>
+                <span className="font-semibold">{workoutDuration}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
                 <span className="text-gray-600">Date:</span>

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { addToOfflineQueue } from '../utils/offline';
 import { createNote, getNote, updateNote } from '../utils/firestore';
 import { NoteInput } from '../types';
 import Header from '../components/Header';
-import { addToOfflineQueue } from '../utils/offline';
 
 const NoteEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,13 +17,7 @@ const NoteEditor: React.FC = () => {
   const navigate = useNavigate();
   const isNewNote = id === 'new';
 
-  useEffect(() => {
-    if (!isNewNote && id && user) {
-      loadNote();
-    }
-  }, [id, user]);
-
-  const loadNote = async () => {
+  const loadNote = useCallback(async () => {
     if (!user || !id || id === 'new') return;
 
     try {
@@ -40,7 +34,13 @@ const NoteEditor: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, id]);
+
+  useEffect(() => {
+    if (!isNewNote && id && user) {
+      loadNote();
+    }
+  }, [id, user, isNewNote, loadNote]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -80,8 +80,9 @@ const NoteEditor: React.FC = () => {
       }
 
       navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to save note');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to save note');
     } finally {
       setSaving(false);
     }

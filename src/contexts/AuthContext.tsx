@@ -46,32 +46,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string) => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to register');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      throw new Error(err.message || 'Failed to register');
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to login');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      throw new Error(err.message || 'Failed to login');
     }
   };
 
   const loginWithGoogle = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to login with Google');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      throw new Error(err.message || 'Failed to login with Google');
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to logout');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      throw new Error(err.message || 'Failed to log out');
     }
   };
 

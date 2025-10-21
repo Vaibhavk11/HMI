@@ -65,13 +65,14 @@ export interface WorkoutLog {
   dayNumber: number;
   date: Date;
   startTime: Date;
-  endTime?: Date;
+  endTime?: Date; // Optional to handle old logs without endTime
   completed: boolean;
   sections: {
     type: SectionType;
     exercises: ExerciseCompletion[];
   }[];
   notes?: string;
+  rating?: number;
 }
 
 export interface UserProgress {

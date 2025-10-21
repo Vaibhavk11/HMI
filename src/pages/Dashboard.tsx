@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
@@ -7,7 +7,25 @@ import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { todaysWorkout, startWorkout, loading, error, currentWeek, setCurrentWeek } = useWorkout();
+  const { todaysWorkout, startWorkout, loading, error, currentWeek, setCurrentWeek, userProgress, isTodayCompleted, resetTodaysWorkout } = useWorkout();
+  const [isResetting, setIsResetting] = useState(false);
+  
+  const handleReset = async () => {
+    if (!window.confirm('Are you sure you want to reset today\'s workout? This will delete all workout logs for today and allow you to start fresh.')) {
+      return;
+    }
+    
+    setIsResetting(true);
+    try {
+      await resetTodaysWorkout();
+      alert('Workout reset successfully! You can now start again.');
+    } catch (err) {
+      console.error('Failed to reset workout:', err);
+      alert('Failed to reset workout. Please try again.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
   
   if (loading) {
     return (
@@ -60,6 +78,24 @@ const Dashboard: React.FC = () => {
             <p className="text-gray-600">Welcome back, {user.displayName || user.email?.split('@')[0]}! 💪</p>
           )}
         </header>
+        
+        {/* Progress Stats */}
+        {userProgress && (
+          <section className="mb-6 grid grid-cols-2 gap-4">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg p-4 text-white shadow-md">
+              <div className="text-sm opacity-90 mb-1">Current Streak</div>
+              <div className="text-3xl font-bold flex items-center gap-2">
+                {userProgress.streak} 🔥
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4 text-white shadow-md">
+              <div className="text-sm opacity-90 mb-1">Workouts Done</div>
+              <div className="text-3xl font-bold">
+                {userProgress.completedWorkouts.length}
+              </div>
+            </div>
+          </section>
+        )}
         
         {/* Week Selector */}
         <section className="mb-6 bg-white rounded-lg shadow-sm p-4">
@@ -172,14 +208,40 @@ const Dashboard: React.FC = () => {
                   </div>
                 ))}
                 
-                <div className="mt-6">
-                  <button
-                    onClick={startWorkout}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center"
-                  >
-                    <span className="text-xl mr-2">▶</span>
-                    Start Workout
-                  </button>
+                <div className="mt-6 space-y-3">
+                  {isTodayCompleted ? (
+                    <>
+                      <div className="w-full bg-green-50 border-2 border-green-500 text-green-700 font-medium py-3 px-4 rounded-lg flex items-center justify-center">
+                        <span className="text-xl mr-2">✓</span>
+                        Workout Completed Today!
+                      </div>
+                      <button
+                        onClick={handleReset}
+                        disabled={isResetting}
+                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 flex items-center justify-center text-sm"
+                      >
+                        {isResetting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Resetting...
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-lg mr-2">🔄</span>
+                            Reset Today's Workout
+                          </>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={startWorkout}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center"
+                    >
+                      <span className="text-xl mr-2">▶</span>
+                      Start Workout
+                    </button>
+                  )}
                 </div>
               </div>
             )

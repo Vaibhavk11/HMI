@@ -13,6 +13,7 @@ const Progress: React.FC = () => {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState<'overview' | 'history' | 'stats'>('overview');
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const loadProgressData = async () => {
@@ -40,8 +41,26 @@ const Progress: React.FC = () => {
   const stats = {
     totalWorkouts: workoutLogs.length,
     totalMinutes: workoutLogs.reduce((sum, log) => {
+      console.log('📊 Processing workout log:', {
+        id: log.id,
+        hasStartTime: !!log.startTime,
+        hasEndTime: !!log.endTime,
+        startTime: log.startTime?.toISOString(),
+        endTime: log.endTime?.toISOString(),
+      });
+      
       if (log.startTime && log.endTime) {
-        return sum + (log.endTime.getTime() - log.startTime.getTime()) / (1000 * 60);
+        const duration = (log.endTime.getTime() - log.startTime.getTime()) / (1000 * 60);
+        console.log('⏱️ Calculated duration:', duration, 'minutes');
+        
+        // Only count positive durations
+        if (duration > 0) {
+          return sum + duration;
+        } else {
+          console.warn('⚠️ Invalid duration (<=0):', duration);
+        }
+      } else {
+        console.warn('⚠️ Missing time data:', { startTime: log.startTime, endTime: log.endTime });
       }
       return sum;
     }, 0),
@@ -51,6 +70,11 @@ const Progress: React.FC = () => {
     currentStreak: userProgress?.streak || 0,
     longestStreak: userProgress?.longestStreak || 0,
   };
+  
+  console.log('📈 Total stats calculated:', {
+    totalWorkouts: stats.totalWorkouts,
+    totalMinutes: stats.totalMinutes
+  });
 
   // Group workouts by week
   const workoutsByWeek = workoutLogs.reduce((acc, log) => {
@@ -385,27 +409,103 @@ const Progress: React.FC = () => {
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((week) => {
                   const weekWorkouts = workoutsByWeek[week] || [];
                   const completionRate = (weekWorkouts.length / 6) * 100; // 6 workout days per week
+                  const isExpanded = expandedWeeks.has(week);
+                  
+                  // Get workouts by day for this week
+                  const workoutsByDay: { [key: number]: WorkoutLog[] } = {};
+                  weekWorkouts.forEach(workout => {
+                    if (!workoutsByDay[workout.dayNumber]) {
+                      workoutsByDay[workout.dayNumber] = [];
+                    }
+                    workoutsByDay[workout.dayNumber].push(workout);
+                  });
+                  
+                  const toggleWeek = () => {
+                    const newExpanded = new Set(expandedWeeks);
+                    if (isExpanded) {
+                      newExpanded.delete(week);
+                    } else {
+                      newExpanded.add(week);
+                    }
+                    setExpandedWeeks(newExpanded);
+                  };
                   
                   return (
-                    <div key={week}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-gray-600">Week {week}</span>
-                        <span className="text-gray-900 font-medium">
-                          {weekWorkouts.length}/6 workouts
-                        </span>
+                    <div key={week} className="border border-gray-200 rounded-lg p-3">
+                      <div 
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={toggleWeek}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="text-gray-600 font-medium">Week {week}</span>
+                            <span className="text-gray-900 font-medium">
+                              {weekWorkouts.length}/6 workouts
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full transition-all ${
+                                completionRate === 100
+                                  ? 'bg-green-500'
+                                  : completionRate > 0
+                                  ? 'bg-blue-500'
+                                  : 'bg-gray-200'
+                              }`}
+                              style={{ width: `${completionRate}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        <div className="ml-3 text-gray-400">
+                          {isExpanded ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            completionRate === 100
-                              ? 'bg-green-500'
-                              : completionRate > 0
-                              ? 'bg-blue-500'
-                              : 'bg-gray-200'
-                          }`}
-                          style={{ width: `${completionRate}%` }}
-                        ></div>
-                      </div>
+                      
+                      {/* Expanded Day-wise Details */}
+                      {isExpanded && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                          {[1, 2, 3, 4, 5, 6, 7].map(day => {
+                            const dayWorkouts = workoutsByDay[day] || [];
+                            const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day - 1];
+                            const isRestDay = day === 7;
+                            
+                            return (
+                              <div key={day} className="flex items-center justify-between text-xs py-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`w-12 font-medium ${dayWorkouts.length > 0 ? 'text-green-600' : isRestDay ? 'text-blue-600' : 'text-gray-400'}`}>
+                                    {dayName}
+                                  </span>
+                                  <span className="text-gray-600">Day {day}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isRestDay ? (
+                                    <span className="text-blue-600 text-xs">Rest Day 😴</span>
+                                  ) : dayWorkouts.length > 0 ? (
+                                    <>
+                                      <span className="text-green-600 font-medium">✓ Completed</span>
+                                      {dayWorkouts[0].endTime && dayWorkouts[0].startTime && (
+                                        <span className="text-gray-500">
+                                          ({Math.round((dayWorkouts[0].endTime.getTime() - dayWorkouts[0].startTime.getTime()) / 60000)}m)
+                                        </span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-400">Not done</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchNotes, deleteNote } from '../utils/firestore';
@@ -15,7 +15,7 @@ const Notes: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -25,15 +25,24 @@ const Notes: React.FC = () => {
       setNotes(fetchedNotes);
       // Cache notes for offline use
       localStorage.setItem(`notes_${user.uid}`, JSON.stringify(fetchedNotes));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Failed to load notes');
       // Try loading from cache
       const cached = localStorage.getItem(`notes_${user.uid}`);
       if (cached) {
-        const cachedNotes = JSON.parse(cached);
+        const cachedNotes = JSON.parse(cached) as Array<{
+          id: string;
+          title: string;
+          content: string;
+          createdAt: string;
+          updatedAt: string;
+          userId: string;
+          ownerUid: string;
+        }>;
         setNotes(
-          cachedNotes.map((n: any) => ({
+          cachedNotes.map((n) => ({
             ...n,
+            ownerUid: n.ownerUid || n.userId,
             createdAt: new Date(n.createdAt),
             updatedAt: new Date(n.updatedAt),
           }))
@@ -42,26 +51,28 @@ const Notes: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    loadNotes();
-
-    // Listen for online/offline events
-    const handleOnline = () => {
-      setOffline(false);
+    if (user) {
       loadNotes();
-    };
-    const handleOffline = () => setOffline(true);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+      // Listen for online/offline events
+      const handleOnline = () => {
+        setOffline(false);
+        loadNotes();
+      };
+      const handleOffline = () => setOffline(true);
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [user]);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
+  }, [user, loadNotes]);
 
   const handleDelete = async (noteId: string) => {
     if (!user) return;

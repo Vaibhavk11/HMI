@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { WorkoutProvider } from './contexts/WorkoutContext';
 import ProtectedRoute from './components/ProtectedRoute';
+// Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Notes from './pages/Notes';
