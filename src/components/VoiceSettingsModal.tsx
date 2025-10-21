@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { voiceService, VoiceSettings } from '../utils/voiceService';
+import { voiceCommandService, VoiceCommandSettings } from '../utils/voiceCommandService';
 
 interface VoiceSettingsModalProps {
   isOpen: boolean;
@@ -8,8 +9,10 @@ interface VoiceSettingsModalProps {
 
 const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState<VoiceSettings>(voiceService.getSettings());
+  const [commandSettings, setCommandSettings] = useState<VoiceCommandSettings>(voiceCommandService.getSettings());
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isTestingSpeech, setIsTestingSpeech] = useState(false);
+  const [activeTab, setActiveTab] = useState<'guidance' | 'commands'>('guidance');
   
   useEffect(() => {
     // Load available voices
@@ -28,6 +31,7 @@ const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({ isOpen, onClose
   
   const handleSave = () => {
     voiceService.saveSettings(settings);
+    voiceCommandService.saveSettings(commandSettings);
     onClose();
   };
   
@@ -47,48 +51,86 @@ const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({ isOpen, onClose
       voice: null
     };
     setSettings(defaults);
+    
+    const commandDefaults = {
+      enabled: false,
+      language: 'en-US',
+      continuous: true
+    };
+    setCommandSettings(commandDefaults);
   };
   
   if (!isOpen) return null;
   
+  const commandsSupported = voiceCommandService.isSupported();
+  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">🎙️ Voice Guidance Settings</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-        
-        <div className="p-4 space-y-6">
-          {/* Enable/Disable Toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-semibold text-gray-900">Enable Voice Guidance</label>
-              <p className="text-sm text-gray-500">Audio cues during workouts</p>
-            </div>
+        <div className="sticky top-0 bg-white border-b border-gray-200">
+          <div className="p-4 flex justify-between items-center border-b border-gray-100">
+            <h2 className="text-xl font-bold text-gray-900">🎙️ Voice Settings</h2>
             <button
-              onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                settings.enabled ? 'bg-blue-600' : 'bg-gray-300'
-              }`}
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  settings.enabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
+              ×
             </button>
           </div>
           
-          {settings.enabled && (
+          {/* Tabs */}
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('guidance')}
+              className={`flex-1 px-4 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'guidance'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              🔊 Audio Guidance
+            </button>
+            <button
+              onClick={() => setActiveTab('commands')}
+              className={`flex-1 px-4 py-3 font-medium text-sm transition-colors ${
+                activeTab === 'commands'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              🎤 Voice Commands
+            </button>
+          </div>
+        </div>
+        
+        <div className="p-4 space-y-6">
+          {/* Audio Guidance Tab */}
+          {activeTab === 'guidance' && (
             <>
-              {/* Volume Control */}
-              <div>
+              {/* Enable/Disable Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-semibold text-gray-900">Enable Voice Guidance</label>
+                  <p className="text-sm text-gray-500">Audio cues during workouts</p>
+                </div>
+                <button
+                  onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    settings.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              {settings.enabled && (
+                <>
+                  {/* Volume Control */}
+                  <div>
                 <label className="block font-semibold text-gray-900 mb-2">
                   Volume: {Math.round(settings.volume * 100)}%
                 </label>
@@ -193,11 +235,121 @@ const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({ isOpen, onClose
               </button>
             </>
           )}
+            </>
+          )}
+          
+          {/* Voice Commands Tab */}
+          {activeTab === 'commands' && (
+            <>
+              {!commandsSupported && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800">
+                    <strong>⚠️ Not Supported:</strong> Voice commands are not supported in your browser. 
+                    Try using Chrome, Edge, or Safari.
+                  </p>
+                </div>
+              )}
+              
+              {commandsSupported && (
+                <>
+                  {/* Enable Voice Commands */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="font-semibold text-gray-900">Enable Voice Commands</label>
+                      <p className="text-sm text-gray-500">Control workout with voice</p>
+                    </div>
+                    <button
+                      onClick={() => setCommandSettings({ ...commandSettings, enabled: !commandSettings.enabled })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        commandSettings.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          commandSettings.enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  
+                  {commandSettings.enabled && (
+                    <>
+                      {/* Language Selection */}
+                      <div>
+                        <label className="block font-semibold text-gray-900 mb-2">
+                          Language
+                        </label>
+                        <select
+                          value={commandSettings.language}
+                          onChange={(e) => setCommandSettings({ ...commandSettings, language: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="en-US">English (US)</option>
+                          <option value="en-GB">English (UK)</option>
+                          <option value="en-AU">English (Australia)</option>
+                          <option value="en-IN">English (India)</option>
+                        </select>
+                      </div>
+                      
+                      {/* Available Commands */}
+                      <div>
+                        <label className="block font-semibold text-gray-900 mb-2">
+                          Available Commands
+                        </label>
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Next" or "Continue"</span>
+                            <span className="text-gray-500">→ Next exercise</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Skip"</span>
+                            <span className="text-gray-500">→ Skip exercise</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Pause" or "Stop"</span>
+                            <span className="text-gray-500">→ Pause timer</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Resume" or "Start"</span>
+                            <span className="text-gray-500">→ Resume timer</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Complete" or "Done"</span>
+                            <span className="text-gray-500">→ Complete set</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">"Instructions"</span>
+                            <span className="text-gray-500">→ Show instructions</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Microphone Permissions Notice */}
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">
+                          <strong>🎤 Microphone Access:</strong> Your browser will request microphone 
+                          permission when voice commands are enabled during a workout.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          )}
           
           {/* Info Box */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>💡 Tip:</strong> Voice guidance will announce exercise starts, completions, and rest periods during your workout.
+              {activeTab === 'guidance' ? (
+                <>
+                  <strong>💡 Tip:</strong> Voice guidance will announce exercise starts, completions, and rest periods during your workout.
+                </>
+              ) : (
+                <>
+                  <strong>💡 Tip:</strong> Voice commands allow hands-free workout control. Just say "Next", "Skip", or "Pause" during your workout.
+                </>
+              )}
             </p>
           </div>
         </div>

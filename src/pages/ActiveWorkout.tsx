@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { voiceService } from '../utils/voiceService';
+import { voiceCommandService } from '../utils/voiceCommandService';
 import VoiceSettingsModal from '../components/VoiceSettingsModal';
 
 const ActiveWorkout: React.FC = () => {
@@ -160,6 +161,45 @@ const ActiveWorkout: React.FC = () => {
     }
   }, [timer, currentExercise, isTimerActive, handleCompleteSet]);
   
+  // Setup voice commands
+  useEffect(() => {
+    // Register command handlers
+    voiceCommandService.registerCommand('next', handleCompleteSet);
+    voiceCommandService.registerCommand('skip', skipExercise);
+    voiceCommandService.registerCommand('pause', () => {
+      if (isTimerActive) {
+        setIsTimerActive(false);
+        voiceService.speak('Timer paused');
+      }
+    });
+    voiceCommandService.registerCommand('resume', () => {
+      if (!isTimerActive && !isResting) {
+        setIsTimerActive(true);
+        voiceService.speak('Timer resumed');
+      }
+    });
+    voiceCommandService.registerCommand('start', () => {
+      if (!isTimerActive && !isResting) {
+        setIsTimerActive(true);
+        voiceService.speak('Timer started');
+      }
+    });
+    voiceCommandService.registerCommand('complete', handleCompleteSet);
+    voiceCommandService.registerCommand('instructions', () => {
+      setShowInstructions(true);
+      voiceService.speak('Showing instructions');
+    });
+    
+    // Start listening for commands
+    voiceCommandService.startListening();
+    
+    // Cleanup on unmount
+    return () => {
+      voiceCommandService.stopListening();
+      voiceCommandService.clearCommands();
+    };
+  }, [handleCompleteSet, skipExercise, isTimerActive, isResting]);
+  
   if (!currentSection || !currentExercise || !todaysWorkout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -201,6 +241,12 @@ const ActiveWorkout: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {voiceCommandService.getIsListening() && voiceCommandService.getSettings().enabled && (
+                <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs animate-pulse">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Listening
+                </div>
+              )}
               <button
                 onClick={() => setShowVoiceSettings(true)}
                 className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors"
