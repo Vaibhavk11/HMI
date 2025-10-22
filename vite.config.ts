@@ -62,6 +62,11 @@ export default defineConfig({
   ],
   // For GitHub Pages deployment - adjust base path if needed
   base: '/HMI/',
+  server: {
+    host: '0.0.0.0', // Explicitly listen on all interfaces
+    port: 5174,
+    strictPort: false, // Allow trying another port if 5174 is busy
+  },
   test: {
     globals: true,
     environment: 'jsdom',

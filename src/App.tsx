@@ -10,8 +10,10 @@ import Notes from './pages/Notes';
 import NoteEditor from './pages/NoteEditor';
 import Dashboard from './pages/Dashboard';
 import ActiveWorkout from './pages/ActiveWorkout';
+import TestWorkout from './pages/TestWorkout';
 import WorkoutComplete from './pages/WorkoutComplete';
 import Progress from './pages/Progress';
+import Settings from './pages/Settings';
 
 const App: React.FC = () => {
   return (
@@ -51,6 +53,14 @@ const App: React.FC = () => {
             }
           />
           <Route
+            path="/workout/test"
+            element={
+              <ProtectedRoute>
+                <TestWorkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/workout/complete"
             element={
               <ProtectedRoute>
@@ -81,6 +91,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <NoteEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

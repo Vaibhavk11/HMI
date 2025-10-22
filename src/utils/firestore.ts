@@ -193,6 +193,7 @@ export const saveWorkoutLog = async (
       type: section.type,
       exercises: section.exercises.map(exercise => ({
         exerciseId: exercise.exerciseId,
+        ...(exercise.mechanic && { mechanic: exercise.mechanic }), // Store mechanic for proper display
         sets: exercise.sets.map(set => {
           const cleanSet: { completed: boolean; reps?: number; duration?: number } = { 
             completed: set.completed 
@@ -272,7 +273,7 @@ export const fetchWorkoutLogs = async (uid: string): Promise<WorkoutLog[]> => {
       return log;
     });
 
-    console.log('✅ Successfully fetched', logs.length, 'workout logs');
+    console.log('✅ Successfully fetched', logs, 'workout logs');
     return logs;
   } catch (error) {
     console.error('❌ Error fetching workout logs:', error);
@@ -603,6 +604,63 @@ export const updateUserProgress = async (
     console.log('✅ User progress updated');
   } catch (error) {
     console.error('❌ Error updating user progress:', error);
+    throw error;
+  }
+};
+
+// Delete all workout logs for a user (for testing/reset purposes)
+export const deleteAllWorkoutLogs = async (uid: string): Promise<void> => {
+  try {
+    console.log('🗑️ Deleting all workout logs for user:', uid);
+    const logsRef = getWorkoutLogsCollection(uid);
+    const querySnapshot = await getDocs(logsRef);
+    
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    console.log('✅ Successfully deleted', querySnapshot.docs.length, 'workout logs');
+  } catch (error) {
+    console.error('❌ Error deleting workout logs:', error);
+    throw error;
+  }
+};
+
+// Reset user progress (for testing/reset purposes)
+export const resetUserProgress = async (uid: string): Promise<void> => {
+  try {
+    console.log('🔄 Resetting user progress for:', uid);
+    const progressRef = getUserProgressDoc(uid);
+    
+    await setDoc(progressRef, {
+      currentWeek: 1,
+      currentDay: 1,
+      startDate: Timestamp.now(),
+      completedWorkouts: [],
+      streak: 0,
+      longestStreak: 0,
+    });
+    
+    console.log('✅ User progress reset successfully');
+  } catch (error) {
+    console.error('❌ Error resetting user progress:', error);
+    throw error;
+  }
+};
+
+// Delete all workout data and reset progress (for testing/reset purposes)
+export const deleteAllWorkoutData = async (uid: string): Promise<void> => {
+  try {
+    console.log('🗑️ Deleting all workout data for user:', uid);
+    
+    // Delete all workout logs
+    await deleteAllWorkoutLogs(uid);
+    
+    // Reset user progress
+    await resetUserProgress(uid);
+    
+    console.log('✅ All workout data deleted and progress reset');
+  } catch (error) {
+    console.error('❌ Error deleting all workout data:', error);
     throw error;
   }
 };

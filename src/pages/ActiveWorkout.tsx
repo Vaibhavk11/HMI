@@ -25,6 +25,7 @@ const ActiveWorkout: React.FC = () => {
   const [reps, setReps] = useState<number>(0);
   const [currentSet, setCurrentSet] = useState<number>(1);
   const [completedSets, setCompletedSets] = useState<number>(0);
+  const [completedSetsData, setCompletedSetsData] = useState<Array<{ completed: boolean; reps?: number; duration?: number }>>([]); // Track each set's data
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState<boolean>(false);
@@ -48,6 +49,7 @@ const ActiveWorkout: React.FC = () => {
       setTimer(0);
       setIsTimerActive(false);
       setIsResting(false);
+      setCompletedSetsData([]); // Reset completed sets data for new exercise
       setRestTimer(0);
       
       // Announce new exercise start
@@ -116,6 +118,22 @@ const ActiveWorkout: React.FC = () => {
     
     const totalSets = currentExercise.defaultSets || 1;
     
+    // Store the current set's data
+    const setData: { completed: boolean; reps?: number; duration?: number } = {
+      completed: true
+    };
+    
+    // Only include relevant metric
+    if (currentExercise.mechanic === 'reps') {
+      setData.reps = reps;
+    } else if (currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' || currentExercise.mechanic === 'failure') {
+      setData.duration = timer;
+    }
+    
+    // Add this set's data to the array
+    const updatedSetsData = [...completedSetsData, setData];
+    setCompletedSetsData(updatedSetsData);
+    
     if (currentSet < totalSets) {
       // Announce set completion
       voiceService.announceSetComplete(currentSet, totalSets);
@@ -140,13 +158,20 @@ const ActiveWorkout: React.FC = () => {
       voiceService.announceExerciseComplete(currentExercise.name);
       
       // All sets complete, move to next exercise
-      completeExercise(currentExercise.id, {
-        reps: currentExercise.mechanic === 'reps' ? reps : undefined,
-        duration: currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' ? timer : undefined,
+      const exerciseData: { reps?: number; duration?: number; sets: number } = {
         sets: totalSets
-      });
+      };
+      
+      // Only include the relevant metric based on exercise mechanic
+      if (currentExercise.mechanic === 'reps') {
+        exerciseData.reps = reps;
+      } else if (currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' || currentExercise.mechanic === 'failure') {
+        exerciseData.duration = timer;
+      }
+      
+      completeExercise(currentExercise.id, exerciseData, updatedSetsData); // Pass individual set data
     }
-  }, [currentExercise, currentSet, reps, timer, completeExercise]);
+  }, [currentExercise, currentSet, reps, timer, completedSetsData, completeExercise]);
   
   // Auto-complete timed exercises
   useEffect(() => {
@@ -162,13 +187,27 @@ const ActiveWorkout: React.FC = () => {
     }
   }, [timer, currentExercise, isTimerActive, handleCompleteSet]);
   
-  // Setup voice commands
+  // Start voice commands once on mount - stays active for entire workout
   useEffect(() => {
     // Check if voice commands are enabled
     const commandSettings = voiceCommandService.getSettings();
     setVoiceCommandsActive(commandSettings.enabled && voiceCommandService.isSupported());
     
-    // Register command handlers
+    // Start listening for commands (only once)
+    voiceCommandService.startListening();
+    console.log('🎤 Voice commands initialized for workout session');
+    
+    // Cleanup only on unmount (end of workout)
+    return () => {
+      voiceCommandService.stopListening();
+      voiceCommandService.clearCommands();
+      console.log('🎤 Voice commands stopped - workout ended');
+    };
+  }, []); // Empty dependency array - runs only once on mount
+  
+  // Update command handlers dynamically without restarting microphone
+  useEffect(() => {
+    // Register/update command handlers
     voiceCommandService.registerCommand('next', handleCompleteSet);
     voiceCommandService.registerCommand('skip', skipExercise);
     voiceCommandService.registerCommand('pause', () => {
@@ -195,14 +234,7 @@ const ActiveWorkout: React.FC = () => {
       voiceService.speak('Showing instructions');
     });
     
-    // Start listening for commands
-    voiceCommandService.startListening();
-    
-    // Cleanup on unmount
-    return () => {
-      voiceCommandService.stopListening();
-      voiceCommandService.clearCommands();
-    };
+    // No cleanup here - don't stop listening, just update handlers
   }, [handleCompleteSet, skipExercise, isTimerActive, isResting]);
   
   // Monitor voice command status
@@ -312,10 +344,17 @@ const ActiveWorkout: React.FC = () => {
         )}
         
         <div className="bg-white rounded-lg shadow-md p-6 mb-4">
-          {/* Exercise Name */}
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
-            {currentExercise.name}
-          </h2>
+          {/* Exercise Name with Color-Coded Circle */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className={`inline-block w-3 h-3 rounded-full ${
+              currentSection?.type === 'warmup' ? 'bg-yellow-400' :
+              currentSection?.type === 'main' ? 'bg-blue-500' :
+              'bg-purple-400'
+            }`}></span>
+            <h2 className="text-2xl font-bold text-center text-gray-800">
+              {currentExercise.name}
+            </h2>
+          </div>
           
           {/* Exercise Image/GIF */}
           <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden" style={{ height: '240px' }}>
@@ -463,14 +502,6 @@ const ActiveWorkout: React.FC = () => {
             </div>
           )}
           
-          {/* Complete Set Button */}
-          <button 
-            onClick={handleCompleteSet}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-3"
-          >
-            {currentSet < totalSets ? `Complete Set ${currentSet}` : '✓ Complete Exercise'}
-          </button>
-          
           {/* Rest Timer between sets */}
           {completedSets > 0 && completedSets < totalSets && currentExercise.restBetweenSets && (
             <div className="text-center text-sm text-gray-600 mb-3">
@@ -497,6 +528,21 @@ const ActiveWorkout: React.FC = () => {
             className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-lg font-medium"
           >
             Skip →
+          </button>
+        </div>
+
+        {/* Add bottom padding to prevent content from being hidden by sticky button */}
+        <div className="h-24"></div>
+      </div>
+      
+      {/* Sticky Complete Set/Exercise Button at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
+        <div className="max-w-xl mx-auto">
+          <button 
+            onClick={handleCompleteSet}
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-md text-lg"
+          >
+            {currentSet < totalSets ? `✓ Complete Set ${currentSet}` : '✓ Complete Exercise'}
           </button>
         </div>
       </div>

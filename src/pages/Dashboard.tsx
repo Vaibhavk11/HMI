@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorkout } from '../contexts/WorkoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { getWorkoutByWeekAndDay } from '../data/workoutProgram';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { todaysWorkout, startWorkout, loading, error, currentWeek, setCurrentWeek, userProgress, isTodayCompleted, resetTodaysWorkout } = useWorkout();
   const [isResetting, setIsResetting] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [testDayNumber, setTestDayNumber] = useState(1);
+  const [testModeEnabled, setTestModeEnabled] = useState(false);
+
+  // Load test mode preference from localStorage
+  useEffect(() => {
+    const savedPreference = localStorage.getItem('testModeEnabled');
+    setTestModeEnabled(savedPreference === 'true');
+  }, []);
   
   const handleReset = async () => {
     if (!window.confirm('Are you sure you want to reset today\'s workout? This will delete all workout logs for today and allow you to start fresh.')) {
@@ -138,6 +149,132 @@ const Dashboard: React.FC = () => {
             ></div>
           </div>
         </section>
+        
+        {/* Test Mode Toggle - Only show if enabled in settings */}
+        {testModeEnabled && (
+          <section className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg shadow-sm p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-lg font-semibold text-purple-900">Testing Mode</h2>
+                <p className="text-sm text-purple-700">Test any day's workout - saves to progress</p>
+              </div>
+              <button
+                onClick={() => setIsTestMode(!isTestMode)}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                  isTestMode ? 'bg-purple-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    isTestMode ? 'translate-x-8' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          
+          {isTestMode && (
+            <div className="mt-4 space-y-3">
+              <div className="bg-white rounded-lg p-3 border border-purple-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Day to Test
+                </label>
+                <div className="grid grid-cols-7 gap-2">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
+                    <button
+                      key={day}
+                      onClick={() => setTestDayNumber(idx + 1)}
+                      className={`py-2 px-1 text-xs font-medium rounded-lg transition-colors ${
+                        testDayNumber === idx + 1
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Exercise Preview for Selected Test Day */}
+              {(() => {
+                const testWorkout = getWorkoutByWeekAndDay(currentWeek, testDayNumber);
+                if (!testWorkout) return null;
+                
+                if (testWorkout.isRestDay) {
+                  return (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="text-center">
+                        <span className="text-2xl mb-2 block">😴</span>
+                        <p className="text-blue-800 font-medium">Rest Day</p>
+                        <p className="text-blue-600 text-sm mt-1">{testWorkout.description}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                const totalExercises = testWorkout.sections.reduce((sum, section) => sum + section.exercises.length, 0);
+                
+                return (
+                  <div className="bg-white rounded-lg p-4 border border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-800">Exercises Preview</h4>
+                      <span className="text-xs text-purple-600 font-medium">
+                        {totalExercises} exercises
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {testWorkout.sections.map((section, sectionIdx) => (
+                        <div key={sectionIdx}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`inline-block w-2 h-2 rounded-full ${
+                              section.type === 'warmup' ? 'bg-yellow-400' :
+                              section.type === 'main' ? 'bg-blue-500' :
+                              'bg-purple-400'
+                            }`}></span>
+                            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                              {section.title}
+                            </h5>
+                          </div>
+                          <div className="ml-4 space-y-1">
+                            {section.exercises.map((exercise) => (
+                              <div 
+                                key={exercise.id}
+                                className="text-sm py-2 px-3 bg-gray-50 rounded-lg"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-700">{exercise.name}</span>
+                                  <span className="text-xs text-gray-500">
+                                    {exercise.defaultSets} × {exercise.mechanic === 'reps' 
+                                      ? `${exercise.defaultReps} reps`
+                                      : `${Math.floor((exercise.defaultDuration || 0) / 60)}:${((exercise.defaultDuration || 0) % 60).toString().padStart(2, '0')}`
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              <button
+                onClick={() => {
+                  // Navigate to test workout
+                  navigate(`/workout/test?week=${currentWeek}&day=${testDayNumber}`);
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <span className="text-lg mr-2">🧪</span>
+                Test Week {currentWeek} - {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][testDayNumber - 1]}
+              </button>
+            </div>
+          )}
+          </section>
+        )}
         
         {/* Today's Workout Section */}
         <section className="mb-8">

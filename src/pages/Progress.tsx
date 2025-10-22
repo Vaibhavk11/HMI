@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchWorkoutLogs, getUserProgress } from '../utils/firestore';
-import { WorkoutLog, UserProgress } from '../types/workout';
+import { WorkoutLog, UserProgress, Exercise } from '../types/workout';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
+import { weeklyWorkoutConfigs } from '../data/weeklyWorkoutConfigs';
 
 const Progress: React.FC = () => {
   const { user } = useAuth();
@@ -12,8 +13,24 @@ const Progress: React.FC = () => {
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedView, setSelectedView] = useState<'overview' | 'history' | 'stats'>('overview');
+  const [selectedView, setSelectedView] = useState<'overview' | 'history' | 'stats' | 'exercises'>('overview');
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toDateString());
+
+  // Helper function to format exercise duration (seconds) in readable format
+  const formatExerciseDuration = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+  };
 
   useEffect(() => {
     const loadProgressData = async () => {
@@ -154,10 +171,10 @@ const Progress: React.FC = () => {
 
       {/* View Tabs */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="flex">
+        <div className="flex overflow-x-auto">
           <button
             onClick={() => setSelectedView('overview')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
+            className={`flex-1 py-4 px-3 text-center font-medium transition-colors whitespace-nowrap ${
               selectedView === 'overview'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -166,8 +183,18 @@ const Progress: React.FC = () => {
             Overview
           </button>
           <button
+            onClick={() => setSelectedView('exercises')}
+            className={`flex-1 py-4 px-3 text-center font-medium transition-colors whitespace-nowrap ${
+              selectedView === 'exercises'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Exercises
+          </button>
+          <button
             onClick={() => setSelectedView('history')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
+            className={`flex-1 py-4 px-3 text-center font-medium transition-colors whitespace-nowrap ${
               selectedView === 'history'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -177,7 +204,7 @@ const Progress: React.FC = () => {
           </button>
           <button
             onClick={() => setSelectedView('stats')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
+            className={`flex-1 py-4 px-3 text-center font-medium transition-colors whitespace-nowrap ${
               selectedView === 'stats'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -534,6 +561,224 @@ const Progress: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Exercises View */}
+        {selectedView === 'exercises' && (
+          <div className="space-y-4">
+            {/* Date Navigator */}
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                Select Date
+              </label>
+              
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-3 mb-3">
+                <button
+                  onClick={() => {
+                    const currentDate = new Date(selectedDate);
+                    currentDate.setDate(currentDate.getDate() - 1);
+                    setSelectedDate(currentDate.toDateString());
+                  }}
+                  className="flex-shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  ← Back
+                </button>
+                
+                <div className="flex-1 text-center">
+                  <div className="text-lg font-semibold text-gray-900">
+                    {new Date(selectedDate).toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      month: 'short', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(selectedDate).toDateString() === new Date().toDateString() 
+                      ? 'Today' 
+                      : `${Math.abs(Math.floor((new Date().getTime() - new Date(selectedDate).getTime()) / (1000 * 60 * 60 * 24)))} days ${new Date(selectedDate) > new Date() ? 'ahead' : 'ago'}`
+                    }
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const currentDate = new Date(selectedDate);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    setSelectedDate(currentDate.toDateString());
+                  }}
+                  className="flex-shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
+              
+              {/* Date Picker */}
+              <input
+                type="date"
+                value={selectedDate ? new Date(selectedDate).toISOString().split('T')[0] : ''}
+                onChange={(e) => setSelectedDate(new Date(e.target.value).toDateString())}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              
+              {/* Quick Jump to Today */}
+              {new Date(selectedDate).toDateString() !== new Date().toDateString() && (
+                <button
+                  onClick={() => setSelectedDate(new Date().toDateString())}
+                  className="w-full mt-2 text-blue-600 hover:text-blue-700 font-medium text-sm py-1"
+                >
+                  Jump to Today
+                </button>
+              )}
+            </div>
+
+            {/* Exercise Details */}
+            {(() => {
+              // Find workouts for selected date
+              const selectedWorkouts = workoutLogs.filter(log => 
+                log.date.toDateString() === selectedDate
+              );
+
+              if (selectedWorkouts.length === 0) {
+                return (
+                  <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                    <p className="text-gray-500 mb-4">No workout found for {new Date(selectedDate).toLocaleDateString()}</p>
+                    <button
+                      onClick={() => navigate('/dashboard')}
+                      className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Go to Dashboard →
+                    </button>
+                  </div>
+                );
+              }
+
+              // Get all exercise definitions for lookup
+              const exerciseMap = new Map<string, Exercise>();
+              weeklyWorkoutConfigs.forEach((weekConfig) => {
+                weekConfig.strength?.forEach((ex: Exercise) => exerciseMap.set(ex.id, ex));
+                weekConfig.cardio?.forEach((ex: Exercise) => exerciseMap.set(ex.id, ex));
+              });
+
+              return selectedWorkouts.map(workout => (
+                <div key={workout.id} className="space-y-3">
+                  {/* Workout Header */}
+                  <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h2 className="font-semibold text-gray-900 mb-2">
+                      Week {workout.weekNumber} - {getDayName(workout.dayNumber)}
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span>
+                        ⏱️ {workout.startTime && workout.endTime
+                          ? formatDuration((workout.endTime.getTime() - workout.startTime.getTime()) / (1000 * 60))
+                          : '-'}
+                      </span>
+                      <span className="text-green-600 font-medium">✓ Completed</span>
+                    </div>
+                  </div>
+
+                  {/* Exercise Sections */}
+                  {workout.sections.map((section, sectionIdx) => (
+                    <div key={sectionIdx} className="bg-white rounded-lg shadow-sm p-4">
+                      <h3 className="font-medium text-gray-900 mb-3 capitalize flex items-center gap-2">
+                        {section.type === 'warmup' && '🏃‍♂️'}
+                        {section.type === 'main' && '💪'}
+                        {section.type === 'cooldown' && '🧘‍♂️'}
+                        {section.type}
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        {section.exercises.map((exerciseCompletion, exIdx) => {
+                          const exercise = exerciseMap.get(exerciseCompletion.exerciseId);
+                          const completedSets = exerciseCompletion.sets.filter(set => set.completed).length;
+                          const totalSets = exerciseCompletion.sets.length;
+                          
+                          return (
+                            <div key={exIdx} className="border border-gray-200 rounded-lg p-3">
+                              {/* Exercise Name */}
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900">
+                                    {exercise?.name || exerciseCompletion.exerciseId}
+                                  </h4>
+                                  {exercise?.targetMuscles && exercise.targetMuscles.length > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {exercise.targetMuscles.join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                                <span className={`text-sm font-medium px-2 py-1 rounded ${
+                                  completedSets === totalSets
+                                    ? 'bg-green-100 text-green-700'
+                                    : completedSets > 0
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {completedSets}/{totalSets} sets
+                                </span>
+                              </div>
+
+                              {/* Sets Details */}
+                              <div className="space-y-1.5 mt-2">
+                                {exerciseCompletion.sets.map((set, setIdx) => {
+                                  // Determine what to show based on exercise mechanic type
+                                  // Prioritize mechanic from saved data, fallback to exercise lookup
+                                  const mechanic = exerciseCompletion.mechanic || exercise?.mechanic;
+                                  const showReps = mechanic === 'reps';
+                                  const showDuration = mechanic === 'timed' || mechanic === 'hold' || mechanic === 'failure' || mechanic === 'distance';
+                                  
+                                  return (
+                                    <div 
+                                      key={setIdx} 
+                                      className={`flex items-center justify-between text-sm py-1.5 px-2 rounded ${
+                                        set.completed ? 'bg-green-50' : 'bg-gray-50'
+                                      }`}
+                                    >
+                                      <span className="text-gray-600 font-medium">
+                                        Set {setIdx + 1}
+                                      </span>
+                                      <div className="flex items-center gap-3">
+                                        {showDuration && set.duration !== undefined && set.duration > 0 && (
+                                          <span className="text-gray-700">
+                                            {formatExerciseDuration(set.duration)}
+                                          </span>
+                                        )}
+                                        {showReps && set.reps !== undefined && set.reps > 0 && (
+                                          <span className="text-gray-700">
+                                            {set.reps} reps
+                                          </span>
+                                        )}
+                                        
+                                        {set.completed ? (
+                                          <span className="text-green-600 font-medium">✓</span>
+                                        ) : (
+                                          <span className="text-gray-400">○</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Exercise Notes */}
+                              {exerciseCompletion.notes && (
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                  <p className="text-xs text-gray-600 italic">
+                                    💭 {exerciseCompletion.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ));
+            })()}
           </div>
         )}
       </div>

@@ -37,7 +37,11 @@ interface WorkoutContextType {
   isTodayCompleted: boolean;
   
   startWorkout: () => void;
-  completeExercise: (exerciseId: string, data: { reps?: number; duration?: number; sets?: number }) => void;
+  completeExercise: (
+    exerciseId: string, 
+    data: { reps?: number; duration?: number; sets?: number },
+    setsData?: Array<{ completed: boolean; reps?: number; duration?: number }> // Optional individual set data
+  ) => void;
   skipExercise: () => void;
   previousExercise: () => void;
   completeWorkout: (notes?: string, rating?: number) => Promise<void>;
@@ -163,17 +167,23 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Complete an exercise and move to next
   const completeExercise = (
     exerciseId: string, 
-    data: { reps?: number; duration?: number; sets?: number }
+    data: { reps?: number; duration?: number; sets?: number },
+    setsData?: Array<{ completed: boolean; reps?: number; duration?: number }> // Optional individual set data
   ) => {
     // Mark exercise as completed
     setCompletedExercises(prev => new Set(prev).add(exerciseId));
     
-    // Store exercise data
+    // Store exercise data with mechanic type
     setExerciseData(prev => {
       const newMap = new Map(prev);
+      
+      // Find the exercise to get its mechanic type
+      const exercise = currentExercise;
+      
       newMap.set(exerciseId, {
         exerciseId,
-        sets: Array.from({ length: data.sets || 1 }, () => ({
+        mechanic: exercise?.mechanic, // Store mechanic for proper display later
+        sets: setsData || Array.from({ length: data.sets || 1 }, () => ({
           reps: data.reps,
           duration: data.duration,
           completed: true

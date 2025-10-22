@@ -49,6 +49,7 @@ export interface WorkoutProgram {
 // For tracking user progress
 export interface ExerciseCompletion {
   exerciseId: string;
+  mechanic?: ExerciseMechanic; // Store mechanic type for proper display
   sets: {
     reps?: number;
     duration?: number;
