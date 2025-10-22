@@ -75,11 +75,17 @@ class VoiceCommandService {
   private handlers: Map<VoiceCommand, () => void> = new Map();
   private isListening: boolean = false;
   private commandPatterns: Map<VoiceCommand, RegExp[]> = new Map();
+  private restartAttempts: number = 0;
+  private maxRestartAttempts: number = 10;
+  private restartTimeout: NodeJS.Timeout | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private lastActivityTime: number = Date.now();
   
   constructor() {
     this.settings = this.loadSettings();
     this.initializeRecognition();
     this.setupCommandPatterns();
+    this.startHeartbeat();
   }
   
   // Initialize speech recognition
@@ -99,21 +105,91 @@ class VoiceCommandService {
     this.recognition.maxAlternatives = 3;
     
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+      this.updateActivity();
       this.handleRecognitionResult(event);
+      // Reset restart attempts on successful recognition
+      this.restartAttempts = 0;
     };
     
     this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        // Auto-restart on common errors
-        this.restartListening();
+      console.error('Speech recognition error:', event.error, event.message);
+      
+      // Handle different error types
+      switch (event.error) {
+        case 'no-speech':
+          console.log('No speech detected, continuing to listen...');
+          this.restartListening();
+          break;
+          
+        case 'audio-capture':
+          console.error('Microphone not available or not permitted');
+          this.restartListening();
+          break;
+          
+        case 'not-allowed':
+          console.error('Microphone permission denied');
+          this.isListening = false;
+          break;
+          
+        case 'network':
+          console.error('Network error, will retry...');
+          this.restartListening();
+          break;
+          
+        case 'aborted':
+          console.log('Recognition aborted, restarting...');
+          this.restartListening();
+          break;
+          
+        default:
+          console.error('Unknown error:', event.error);
+          this.restartListening();
       }
     };
     
+    this.recognition.onstart = () => {
+      console.log('🎤 Voice recognition started');
+      this.updateActivity();
+      this.restartAttempts = 0;
+    };
+    
+    this.recognition.onaudiostart = () => {
+      console.log('🎤 Audio capture started');
+      this.updateActivity();
+    };
+    
+    this.recognition.onaudioend = () => {
+      console.log('🎤 Audio capture ended');
+    };
+    
+    this.recognition.onsoundstart = () => {
+      console.log('🎤 Sound detected');
+      this.updateActivity();
+    };
+    
+    this.recognition.onsoundend = () => {
+      console.log('🎤 Sound ended');
+    };
+    
+    this.recognition.onspeechstart = () => {
+      console.log('🎤 Speech started');
+      this.updateActivity();
+    };
+    
+    this.recognition.onspeechend = () => {
+      console.log('🎤 Speech ended');
+    };
+    
     this.recognition.onend = () => {
+      console.log('🎤 Voice recognition ended');
+      
       // Auto-restart if continuous mode is enabled and still should be listening
       if (this.isListening && this.settings.enabled && this.settings.continuous) {
+        console.log('Auto-restarting voice recognition...');
         this.restartListening();
+      } else {
+        console.log('Voice recognition stopped (not restarting)');
+        this.isListening = false;
       }
     };
   }
@@ -225,15 +301,46 @@ class VoiceCommandService {
   
   // Restart listening (with delay to avoid errors)
   private restartListening(): void {
-    setTimeout(() => {
+    // Clear any existing restart timeout
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
+    
+    // Check if we've exceeded max restart attempts
+    if (this.restartAttempts >= this.maxRestartAttempts) {
+      console.error('Max restart attempts reached. Please check microphone permissions.');
+      this.isListening = false;
+      return;
+    }
+    
+    this.restartAttempts++;
+    console.log(`Restart attempt ${this.restartAttempts}/${this.maxRestartAttempts}`);
+    
+    // Use exponential backoff for retries (100ms, 200ms, 400ms, 800ms, then cap at 2s)
+    const delay = Math.min(100 * Math.pow(2, this.restartAttempts - 1), 2000);
+    
+    this.restartTimeout = setTimeout(() => {
       if (this.isListening && this.settings.enabled && this.recognition) {
         try {
+          console.log('Attempting to restart recognition...');
           this.recognition.start();
         } catch (error) {
-          // Ignore if already started
+          const err = error as Error;
+          if (err.message && err.message.includes('already started')) {
+            console.log('Recognition already running');
+            this.restartAttempts = 0; // Reset since it's already running
+          } else {
+            console.error('Failed to restart recognition:', err);
+            // Try again if not at max attempts
+            if (this.restartAttempts < this.maxRestartAttempts) {
+              this.restartListening();
+            }
+          }
         }
       }
-    }, 100);
+      this.restartTimeout = null;
+    }, delay);
   }
   
   // Register command handler
@@ -264,31 +371,81 @@ class VoiceCommandService {
     }
     
     if (this.isListening) {
-      console.log('Already listening');
+      console.log('Already listening for voice commands');
       return;
     }
     
     try {
       this.isListening = true;
+      this.restartAttempts = 0;
+      this.updateActivity();
+      
+      // Ensure heartbeat is running
+      if (!this.heartbeatInterval) {
+        this.startHeartbeat();
+      }
+      
       this.recognition.start();
-      console.log('Started listening for voice commands');
+      console.log('🎤 Started listening for voice commands');
     } catch (error) {
-      console.error('Failed to start listening:', error);
-      this.isListening = false;
+      const err = error as Error;
+      console.error('Failed to start listening:', err);
+      
+      // If it's already started, that's actually fine
+      if (err.message && err.message.includes('already started')) {
+        console.log('Recognition already running, continuing...');
+        this.isListening = true;
+      } else {
+        this.isListening = false;
+      }
     }
   }
   
   // Stop listening for commands
   stopListening(): void {
-    if (!this.recognition || !this.isListening) return;
+    if (!this.recognition || !this.isListening) {
+      console.log('Not currently listening');
+      return;
+    }
     
     try {
       this.isListening = false;
+      
+      // Clear any pending restart
+      if (this.restartTimeout) {
+        clearTimeout(this.restartTimeout);
+        this.restartTimeout = null;
+      }
+      
+      // Stop heartbeat when stopping listening
+      this.stopHeartbeat();
+      
       this.recognition.stop();
-      console.log('Stopped listening for voice commands');
+      console.log('🎤 Stopped listening for voice commands');
     } catch (error) {
       console.error('Failed to stop listening:', error);
     }
+  }
+  
+  // Force restart recognition (useful for debugging or recovery)
+  forceRestart(): void {
+    console.log('Forcing voice recognition restart...');
+    
+    if (this.recognition && this.isListening) {
+      try {
+        this.recognition.stop();
+      } catch (error) {
+        console.error('Error stopping during force restart:', error);
+      }
+    }
+    
+    this.restartAttempts = 0;
+    
+    setTimeout(() => {
+      if (this.settings.enabled) {
+        this.startListening();
+      }
+    }, 200);
   }
   
   // Load settings from localStorage
@@ -344,6 +501,35 @@ class VoiceCommandService {
   // Get all available commands
   getAvailableCommands(): VoiceCommand[] {
     return Array.from(this.commandPatterns.keys());
+  }
+  
+  // Heartbeat to ensure continuous listening
+  private startHeartbeat(): void {
+    // Check every 5 seconds if recognition is still active
+    this.heartbeatInterval = setInterval(() => {
+      if (this.isListening && this.settings.enabled) {
+        const timeSinceLastActivity = Date.now() - this.lastActivityTime;
+        
+        // If no activity for 30 seconds and we should be listening, force restart
+        if (timeSinceLastActivity > 30000) {
+          console.log('⚠️ No activity detected for 30s, forcing restart...');
+          this.forceRestart();
+        }
+      }
+    }, 5000);
+  }
+  
+  // Update last activity time
+  private updateActivity(): void {
+    this.lastActivityTime = Date.now();
+  }
+  
+  // Stop heartbeat (cleanup)
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 }
 

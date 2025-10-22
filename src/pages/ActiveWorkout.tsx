@@ -30,6 +30,7 @@ const ActiveWorkout: React.FC = () => {
   const [showVoiceSettings, setShowVoiceSettings] = useState<boolean>(false);
   const [restTimer, setRestTimer] = useState<number>(0);
   const [isResting, setIsResting] = useState<boolean>(false);
+  const [voiceCommandsActive, setVoiceCommandsActive] = useState<boolean>(false);
   
   // Redirect if workout isn't active
   useEffect(() => {
@@ -163,6 +164,10 @@ const ActiveWorkout: React.FC = () => {
   
   // Setup voice commands
   useEffect(() => {
+    // Check if voice commands are enabled
+    const commandSettings = voiceCommandService.getSettings();
+    setVoiceCommandsActive(commandSettings.enabled && voiceCommandService.isSupported());
+    
     // Register command handlers
     voiceCommandService.registerCommand('next', handleCompleteSet);
     voiceCommandService.registerCommand('skip', skipExercise);
@@ -199,6 +204,17 @@ const ActiveWorkout: React.FC = () => {
       voiceCommandService.clearCommands();
     };
   }, [handleCompleteSet, skipExercise, isTimerActive, isResting]);
+  
+  // Monitor voice command status
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      const commandSettings = voiceCommandService.getSettings();
+      const isActive = commandSettings.enabled && voiceCommandService.getIsListening();
+      setVoiceCommandsActive(isActive);
+    }, 1000);
+    
+    return () => clearInterval(checkInterval);
+  }, []);
   
   if (!currentSection || !currentExercise || !todaysWorkout) {
     return (
@@ -241,10 +257,13 @@ const ActiveWorkout: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {voiceCommandService.getIsListening() && voiceCommandService.getSettings().enabled && (
-                <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs animate-pulse">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  Listening
+              {voiceCommandsActive && (
+                <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg">
+                  <div className="relative">
+                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 w-2.5 h-2.5 bg-white rounded-full animate-ping"></div>
+                  </div>
+                  <span>🎤 Voice Active</span>
                 </div>
               )}
               <button
@@ -271,6 +290,16 @@ const ActiveWorkout: React.FC = () => {
       
       {/* Exercise Content */}
       <div className="max-w-xl mx-auto p-4">
+        {/* Voice Commands Tip for "To Failure" Exercises */}
+        {voiceCommandsActive && currentExercise.mechanic === 'failure' && (
+          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-4 text-center">
+            <div className="text-blue-800 font-semibold text-sm mb-1">💡 Voice Command Tip</div>
+            <div className="text-blue-700 text-xs">
+              Say <strong>"Complete"</strong> or <strong>"Done"</strong> when you reach failure
+            </div>
+          </div>
+        )}
+        
         {/* Rest Timer Banner */}
         {isResting && restTimer > 0 && (
           <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 mb-4 text-center animate-pulse">
