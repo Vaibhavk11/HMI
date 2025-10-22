@@ -18,8 +18,8 @@ const Header: React.FC = () => {
   return (
     <header className="bg-blue-500 text-white shadow-lg">
       <div className="container-mobile flex items-center justify-between py-4">
-        <Link to="/dashboard" className="text-xl font-bold flex items-center gap-2">
-          <span>�</span>
+        <Link to="/dashboard" className="text-xl font-bold flex items-center gap-2" aria-label="Go to dashboard">
+          <span role="img" aria-label="flexed biceps" className="text-2xl">💪</span>
           <span>Workout Tracker</span>
         </Link>
         {user && (
