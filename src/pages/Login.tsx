@@ -23,22 +23,33 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">💪 Workout Tracker</h1>
-          <p className="text-gray-600">Your 12-week fitness journey starts here</p>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl shadow-2xl mb-5 active:scale-110 transition-transform duration-300">
+            <span className="text-4xl">💪</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mb-2">
+            Workout Tracker
+          </h1>
+          <p className="text-gray-700 text-base font-medium">Your 12-week fitness journey starts here</p>
         </div>
-        <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
+        <h2 className="mt-6 text-center text-2xl font-bold text-gray-900 mb-1">
           Sign in to continue
         </h2>
+        <p className="text-center text-gray-600 text-sm mb-5">
+          Start your transformation today
+        </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-5 shadow-2xl rounded-3xl sm:px-10 border-2 border-gray-100">
           {error && (
-            <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-400 text-red-800 px-4 py-3 rounded-2xl mb-5 shadow-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚠️</span>
+                <p className="font-medium text-sm">{error}</p>
+              </div>
             </div>
           )}
 
@@ -47,7 +58,7 @@ const Login: React.FC = () => {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full inline-flex justify-center items-center py-4 px-5 border-2 border-gray-300 rounded-2xl shadow-xl bg-white text-base font-bold text-gray-800 active:bg-gray-50 active:shadow-2xl active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all duration-200 min-h-[56px]"
             >
               <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
                 <path
@@ -67,13 +78,20 @@ const Login: React.FC = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              {loading ? 'Signing in...' : 'Sign in with Google'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-3 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  Signing in...
+                </div>
+              ) : (
+                'Sign in with Google'
+              )}
             </button>
           </div>
 
           <div className="mt-6">
-            <p className="text-center text-sm text-gray-600">
-              By signing in, you agree to start your fitness journey with our 12-week beginner workout program
+            <p className="text-center text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl">
+              By signing in, you agree to start your fitness journey with our 12-week beginner workout program 🏋️‍♂️
             </p>
           </div>
         </div>
