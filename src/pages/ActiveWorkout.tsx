@@ -17,29 +17,31 @@ const ActiveWorkout: React.FC = () => {
     workoutStartTime,
     completeExercise,
     skipExercise,
-    previousExercise
+    previousExercise,
   } = useWorkout();
-  
+
   const [timer, setTimer] = useState<number>(0);
   const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
   const [reps, setReps] = useState<number>(0);
   const [currentSet, setCurrentSet] = useState<number>(1);
   const [completedSets, setCompletedSets] = useState<number>(0);
-  const [completedSetsData, setCompletedSetsData] = useState<Array<{ completed: boolean; reps?: number; duration?: number }>>([]); // Track each set's data
+  const [completedSetsData, setCompletedSetsData] = useState<
+    Array<{ completed: boolean; reps?: number; duration?: number }>
+  >([]); // Track each set's data
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState<boolean>(false);
   const [restTimer, setRestTimer] = useState<number>(0);
   const [isResting, setIsResting] = useState<boolean>(false);
   const [voiceCommandsActive, setVoiceCommandsActive] = useState<boolean>(false);
-  
+
   // Redirect if workout isn't active
   useEffect(() => {
     if (!isWorkoutActive) {
       navigate('/dashboard');
     }
   }, [isWorkoutActive, navigate]);
-  
+
   // Initialize reps when exercise changes
   useEffect(() => {
     if (currentExercise) {
@@ -51,46 +53,46 @@ const ActiveWorkout: React.FC = () => {
       setIsResting(false);
       setCompletedSetsData([]); // Reset completed sets data for new exercise
       setRestTimer(0);
-      
+
       // Announce new exercise start
       voiceService.announceExerciseStart(currentExercise.name, 1);
     }
   }, [currentExercise]);
-  
+
   // Timer for timed exercises
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (isTimerActive) {
       interval = setInterval(() => {
-        setTimer(t => t + 1);
+        setTimer((t) => t + 1);
       }, 1000);
     }
-    
+
     return () => clearInterval(interval);
   }, [isTimerActive]);
-  
+
   // Track total workout elapsed time
   useEffect(() => {
     if (!workoutStartTime) return;
-    
+
     const interval = setInterval(() => {
       const now = new Date();
       const elapsed = Math.floor((now.getTime() - workoutStartTime.getTime()) / 1000);
       setElapsedTime(elapsed);
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [workoutStartTime]);
-  
+
   // Rest timer countdown
   useEffect(() => {
     if (!isResting || restTimer <= 0) return;
-    
+
     const interval = setInterval(() => {
-      setRestTimer(prev => {
+      setRestTimer((prev) => {
         const newTime = prev - 1;
-        
+
         // Voice announcements at specific intervals
         if (newTime === 10) {
           voiceService.announceRestEnding(10);
@@ -104,46 +106,50 @@ const ActiveWorkout: React.FC = () => {
             voiceService.announceExerciseStart(currentExercise.name, currentSet);
           }
         }
-        
+
         return newTime;
       });
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [isResting, restTimer, currentExercise, currentSet]);
-  
+
   // Define handleCompleteSet with useCallback
   const handleCompleteSet = useCallback(() => {
     if (!currentExercise) return;
-    
+
     const totalSets = currentExercise.defaultSets || 1;
-    
+
     // Store the current set's data
     const setData: { completed: boolean; reps?: number; duration?: number } = {
-      completed: true
+      completed: true,
     };
-    
+
     // Only include relevant metric
     if (currentExercise.mechanic === 'reps') {
       setData.reps = reps;
-    } else if (currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' || currentExercise.mechanic === 'failure') {
+    } else if (
+      currentExercise.mechanic === 'timed' ||
+      currentExercise.mechanic === 'hold' ||
+      currentExercise.mechanic === 'failure'
+    ) {
       setData.duration = timer;
     }
-    
+
     // Add this set's data to the array
     const updatedSetsData = [...completedSetsData, setData];
     setCompletedSetsData(updatedSetsData);
-    
+
     if (currentSet < totalSets) {
       // Announce set completion
       voiceService.announceSetComplete(currentSet, totalSets);
-      
+
       // Move to next set
       setCompletedSets(currentSet);
       setCurrentSet(currentSet + 1);
       setTimer(0);
       setIsTimerActive(false);
-      
+
       // Start rest timer if rest period is defined
       if (currentExercise.restBetweenSets) {
         setIsResting(true);
@@ -156,23 +162,27 @@ const ActiveWorkout: React.FC = () => {
     } else {
       // Announce exercise completion
       voiceService.announceExerciseComplete(currentExercise.name);
-      
+
       // All sets complete, move to next exercise
       const exerciseData: { reps?: number; duration?: number; sets: number } = {
-        sets: totalSets
+        sets: totalSets,
       };
-      
+
       // Only include the relevant metric based on exercise mechanic
       if (currentExercise.mechanic === 'reps') {
         exerciseData.reps = reps;
-      } else if (currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' || currentExercise.mechanic === 'failure') {
+      } else if (
+        currentExercise.mechanic === 'timed' ||
+        currentExercise.mechanic === 'hold' ||
+        currentExercise.mechanic === 'failure'
+      ) {
         exerciseData.duration = timer;
       }
-      
+
       completeExercise(currentExercise.id, exerciseData, updatedSetsData); // Pass individual set data
     }
   }, [currentExercise, currentSet, reps, timer, completedSetsData, completeExercise]);
-  
+
   // Auto-complete timed exercises
   useEffect(() => {
     if (
@@ -186,17 +196,17 @@ const ActiveWorkout: React.FC = () => {
       handleCompleteSet();
     }
   }, [timer, currentExercise, isTimerActive, handleCompleteSet]);
-  
+
   // Start voice commands once on mount - stays active for entire workout
   useEffect(() => {
     // Check if voice commands are enabled
     const commandSettings = voiceCommandService.getSettings();
     setVoiceCommandsActive(commandSettings.enabled && voiceCommandService.isSupported());
-    
+
     // Start listening for commands (only once)
     voiceCommandService.startListening();
     console.log('🎤 Voice commands initialized for workout session');
-    
+
     // Cleanup only on unmount (end of workout)
     return () => {
       voiceCommandService.stopListening();
@@ -204,7 +214,7 @@ const ActiveWorkout: React.FC = () => {
       console.log('🎤 Voice commands stopped - workout ended');
     };
   }, []); // Empty dependency array - runs only once on mount
-  
+
   // Update command handlers dynamically without restarting microphone
   useEffect(() => {
     // Register/update command handlers
@@ -233,10 +243,10 @@ const ActiveWorkout: React.FC = () => {
       setShowInstructions(true);
       voiceService.speak('Showing instructions');
     });
-    
+
     // No cleanup here - don't stop listening, just update handlers
   }, [handleCompleteSet, skipExercise, isTimerActive, isResting]);
-  
+
   // Monitor voice command status
   useEffect(() => {
     const checkInterval = setInterval(() => {
@@ -244,10 +254,10 @@ const ActiveWorkout: React.FC = () => {
       const isActive = commandSettings.enabled && voiceCommandService.getIsListening();
       setVoiceCommandsActive(isActive);
     }, 1000);
-    
+
     return () => clearInterval(checkInterval);
   }, []);
-  
+
   if (!currentSection || !currentExercise || !todaysWorkout) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -258,26 +268,32 @@ const ActiveWorkout: React.FC = () => {
       </div>
     );
   }
-  
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
-  const totalExercises = todaysWorkout.sections.reduce((acc, section) => acc + section.exercises.length, 0);
+
+  const totalExercises = todaysWorkout.sections.reduce(
+    (acc, section) => acc + section.exercises.length,
+    0
+  );
   const completedExercises = todaysWorkout.sections.reduce((acc, section, idx) => {
     if (idx < currentSectionIndex) return acc + section.exercises.length;
     if (idx === currentSectionIndex) return acc + currentExerciseIndex;
     return acc;
   }, 0);
   const progressPercent = (completedExercises / totalExercises) * 100;
-  
+
   const canGoBack = currentSectionIndex > 0 || currentExerciseIndex > 0;
   const totalSets = currentExercise.defaultSets || 1;
-  
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50"
+      style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
+    >
       {/* Header with progress */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10 shadow-sm">
         <div className="max-w-xl mx-auto">
@@ -312,14 +328,14 @@ const ActiveWorkout: React.FC = () => {
             </div>
           </div>
           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-            <div 
+            <div
               className="bg-blue-600 h-full rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
         </div>
       </div>
-      
+
       {/* Exercise Content */}
       <div className="max-w-xl mx-auto p-4">
         {/* Voice Commands Tip for "To Failure" Exercises */}
@@ -331,31 +347,31 @@ const ActiveWorkout: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Rest Timer Banner */}
         {isResting && restTimer > 0 && (
           <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 mb-4 text-center animate-pulse">
             <div className="text-yellow-800 font-bold text-lg mb-1">⏸️ Rest Period</div>
             <div className="text-4xl font-bold text-yellow-600 mb-1">{restTimer}s</div>
-            <div className="text-sm text-yellow-700">
-              Prepare for set {currentSet}
-            </div>
+            <div className="text-sm text-yellow-700">Prepare for set {currentSet}</div>
           </div>
         )}
-        
+
         <div className="bg-white rounded-lg shadow-md p-6 mb-4">
           {/* Exercise Name with Color-Coded Circle */}
           <div className="flex items-center justify-center gap-3 mb-4">
-            <span className={`inline-block w-3 h-3 rounded-full ${
-              currentSection?.type === 'warmup' ? 'bg-yellow-400' :
-              currentSection?.type === 'main' ? 'bg-blue-500' :
-              'bg-purple-400'
-            }`}></span>
-            <h2 className="text-2xl font-bold text-center text-gray-800">
-              {currentExercise.name}
-            </h2>
+            <span
+              className={`inline-block w-3 h-3 rounded-full ${
+                currentSection?.type === 'warmup'
+                  ? 'bg-yellow-400'
+                  : currentSection?.type === 'main'
+                    ? 'bg-blue-500'
+                    : 'bg-purple-400'
+              }`}
+            ></span>
+            <h2 className="text-2xl font-bold text-center text-gray-800">{currentExercise.name}</h2>
           </div>
-          
+
           {/* Exercise Image/GIF */}
           <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden" style={{ height: '240px' }}>
             {currentExercise.imageUrl || currentExercise.videoUrl ? (
@@ -401,7 +417,7 @@ const ActiveWorkout: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Instructions Toggle */}
           {currentExercise.instructions && currentExercise.instructions.length > 0 && (
             <div className="mb-4">
@@ -410,23 +426,23 @@ const ActiveWorkout: React.FC = () => {
                 className="w-full flex items-center justify-between px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
               >
                 <span className="font-medium">📋 Exercise Instructions</span>
-                <span className="text-xl">
-                  {showInstructions ? '▲' : '▼'}
-                </span>
+                <span className="text-xl">{showInstructions ? '▲' : '▼'}</span>
               </button>
-              
+
               {showInstructions && (
                 <div className="mt-2 p-4 bg-gray-50 rounded-lg">
                   <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                     {currentExercise.instructions.map((instruction, idx) => (
-                      <li key={idx} className="leading-relaxed">{instruction}</li>
+                      <li key={idx} className="leading-relaxed">
+                        {instruction}
+                      </li>
                     ))}
                   </ol>
                 </div>
               )}
             </div>
           )}
-          
+
           {/* Set Counter */}
           <div className="bg-gray-50 rounded-lg p-4 mb-4 text-center">
             <div className="text-sm text-gray-600 mb-1">Current Set</div>
@@ -439,15 +455,13 @@ const ActiveWorkout: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Exercise Controls based on mechanic */}
           {currentExercise.mechanic === 'reps' && (
             <div className="mb-4">
-              <label className="block text-center text-gray-700 font-medium mb-2">
-                Reps
-              </label>
+              <label className="block text-center text-gray-700 font-medium mb-2">Reps</label>
               <div className="flex items-center justify-center gap-4">
-                <button 
+                <button
                   onClick={() => setReps(Math.max(1, reps - 1))}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-12 h-12 rounded-full text-xl font-bold"
                 >
@@ -456,7 +470,7 @@ const ActiveWorkout: React.FC = () => {
                 <div className="bg-white border-2 border-blue-500 w-20 h-20 rounded-lg flex items-center justify-center">
                   <span className="text-3xl font-bold text-blue-600">{reps}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setReps(reps + 1)}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-12 h-12 rounded-full text-xl font-bold"
                 >
@@ -468,26 +482,29 @@ const ActiveWorkout: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {(currentExercise.mechanic === 'timed' || currentExercise.mechanic === 'hold' || currentExercise.mechanic === 'failure') && (
+
+          {(currentExercise.mechanic === 'timed' ||
+            currentExercise.mechanic === 'hold' ||
+            currentExercise.mechanic === 'failure') && (
             <div className="mb-4">
               <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-4">
-                  {formatTime(timer)}
-                </div>
+                <div className="text-5xl font-bold text-blue-600 mb-4">{formatTime(timer)}</div>
                 <div className="flex justify-center gap-3 mb-3">
-                  <button 
+                  <button
                     onClick={() => setIsTimerActive(!isTimerActive)}
                     className={`px-6 py-3 rounded-lg font-medium ${
-                      isTimerActive 
-                        ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      isTimerActive
+                        ? 'bg-red-500 hover:bg-red-600 text-white'
                         : 'bg-green-500 hover:bg-green-600 text-white'
                     }`}
                   >
                     {isTimerActive ? '⏸ Pause' : '▶ Start'}
                   </button>
-                  <button 
-                    onClick={() => { setTimer(0); setIsTimerActive(false); }}
+                  <button
+                    onClick={() => {
+                      setTimer(0);
+                      setIsTimerActive(false);
+                    }}
                     className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium"
                   >
                     ↺ Reset
@@ -501,7 +518,7 @@ const ActiveWorkout: React.FC = () => {
               </div>
             </div>
           )}
-          
+
           {/* Rest Timer between sets */}
           {completedSets > 0 && completedSets < totalSets && currentExercise.restBetweenSets && (
             <div className="text-center text-sm text-gray-600 mb-3">
@@ -509,21 +526,21 @@ const ActiveWorkout: React.FC = () => {
             </div>
           )}
         </div>
-        
+
         {/* Navigation Buttons */}
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={previousExercise}
             disabled={!canGoBack}
             className={`flex-1 py-3 px-4 rounded-lg font-medium ${
               !canGoBack
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
             }`}
           >
             ← Previous
           </button>
-          <button 
+          <button
             onClick={skipExercise}
             className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-lg font-medium"
           >
@@ -534,11 +551,11 @@ const ActiveWorkout: React.FC = () => {
         {/* Add bottom padding to prevent content from being hidden by sticky button */}
         <div className="h-24"></div>
       </div>
-      
+
       {/* Sticky Complete Set/Exercise Button at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
         <div className="max-w-xl mx-auto">
-          <button 
+          <button
             onClick={handleCompleteSet}
             className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-md text-lg"
           >
@@ -546,12 +563,9 @@ const ActiveWorkout: React.FC = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Voice Settings Modal */}
-      <VoiceSettingsModal 
-        isOpen={showVoiceSettings} 
-        onClose={() => setShowVoiceSettings(false)} 
-      />
+      <VoiceSettingsModal isOpen={showVoiceSettings} onClose={() => setShowVoiceSettings(false)} />
     </div>
   );
 };
