@@ -290,15 +290,20 @@ const ActiveWorkout: React.FC = () => {
   const totalSets = currentExercise.defaultSets || 1;
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50"
-      style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
-      }}
-    >
-      {/* Header with progress */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      {/* Fixed gradient area behind notch */}
+      <div
+        className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 z-50 pointer-events-none"
+        style={{ height: 'env(safe-area-inset-top)' }}
+      />
+
+      {/* Scrollable content with padding */}
+      <div style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+        {/* Header with progress - sticks under the notch when scrolling */}
+        <div
+          className="bg-white border-b border-gray-200 px-4 py-3 sticky z-40 shadow-sm"
+          style={{ top: 'env(safe-area-inset-top)' }}
+        >
         <div className="max-w-xl mx-auto">
           <div className="flex justify-between items-center mb-2">
             <div>
@@ -569,6 +574,7 @@ const ActiveWorkout: React.FC = () => {
 
       {/* Voice Settings Modal */}
       <VoiceSettingsModal isOpen={showVoiceSettings} onClose={() => setShowVoiceSettings(false)} />
+      </div>
     </div>
   );
 };
