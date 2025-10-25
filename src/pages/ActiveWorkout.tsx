@@ -297,13 +297,11 @@ const ActiveWorkout: React.FC = () => {
         style={{ height: 'env(safe-area-inset-top)' }}
       />
 
-      {/* Scrollable content with padding */}
-      <div style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
-        {/* Header with progress - sticks under the notch when scrolling */}
-        <div
-          className="bg-white border-b border-gray-200 px-4 py-3 sticky z-40 shadow-sm"
-          style={{ top: 'env(safe-area-inset-top)' }}
-        >
+      {/* Header with progress - sticks under the notch when scrolling */}
+      <div
+        className="bg-white border-b border-gray-200 px-4 py-3 sticky z-40 shadow-sm"
+        style={{ top: 'env(safe-area-inset-top)' }}
+      >
         <div className="max-w-xl mx-auto">
           <div className="flex justify-between items-center mb-2">
             <div>
@@ -345,7 +343,13 @@ const ActiveWorkout: React.FC = () => {
       </div>
 
       {/* Exercise Content */}
-      <div className="max-w-xl mx-auto p-4">
+      <div
+        className="max-w-xl mx-auto p-4"
+        style={{
+          paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
+          paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
+        }}
+      >
         {/* Voice Commands Tip for "To Failure" Exercises */}
         {voiceCommandsActive && currentExercise.mechanic === 'failure' && (
           <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-4 text-center">
@@ -555,13 +559,13 @@ const ActiveWorkout: React.FC = () => {
             Skip →
           </button>
         </div>
-
-        {/* Add bottom padding to prevent content from being hidden by sticky button */}
-        <div className="h-24"></div>
       </div>
 
       {/* Sticky Complete Set/Exercise Button at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="max-w-xl mx-auto">
           <button
             onClick={handleCompleteSet}
@@ -574,7 +578,6 @@ const ActiveWorkout: React.FC = () => {
 
       {/* Voice Settings Modal */}
       <VoiceSettingsModal isOpen={showVoiceSettings} onClose={() => setShowVoiceSettings(false)} />
-      </div>
     </div>
   );
 };
