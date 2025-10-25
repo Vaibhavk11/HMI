@@ -1,4 +1,5 @@
 import { Exercise } from '../types/workout';
+import { exerciseImageMap } from './exerciseImages';
 
 export const warmupExercises: Exercise[] = [
   {
@@ -6,6 +7,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Neck Rotations',
     description: 'Flexion and Extension / Lateral Flexion / Rotation',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-neck-rotations'],
     instructions: [
       'Stand with feet shoulder-width apart',
       'Slowly rotate your head in a circular motion',
@@ -22,6 +24,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Arm Swings',
     description: 'Dynamic shoulder and chest warm-up',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-arm-swings'],
     instructions: [
       'Stand with feet shoulder-width apart',
       'Swing both arms forward and backward in a controlled manner',
@@ -37,6 +40,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Shoulder Circumduction',
     description: 'Circular shoulder movements to warm up shoulder joints',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-shoulder-circumduction'],
     instructions: [
       'Stand with feet shoulder-width apart',
       'Make large circles with your shoulders',
@@ -52,6 +56,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Dynamic Chest Stretch',
     description: 'Opening up the chest and shoulders',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-dynamic-chest-stretch'],
     instructions: [
       'Stand with arms extended to sides at shoulder height',
       'Bring arms forward, crossing them in front',
@@ -67,6 +72,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Side Bends',
     description: 'Lateral flexion to warm up the core and obliques',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-side-bends'],
     instructions: [
       'Stand with feet shoulder-width apart, hands on hips',
       'Bend to one side, keeping hips stable',
@@ -82,6 +88,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Windmill',
     description: 'Full body rotation exercise',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-windmill'],
     instructions: [
       'Stand with feet wider than shoulder-width apart',
       'Extend arms to sides at shoulder height',
@@ -97,6 +104,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Cat and Camel Drill',
     description: 'Spinal mobility exercise',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-cat-camel'],
     instructions: [
       'Start on hands and knees in a quadruped position',
       'Arch your back up (cat position)',
@@ -112,6 +120,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Standing Hip Flexion and Rotation',
     description: 'Hip mobility exercise',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-hip-flexion-rotation'],
     instructions: [
       'Stand on one leg for balance',
       'Lift the other knee up and rotate the hip',
@@ -127,6 +136,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Leg Swings (Front and Back)',
     description: 'Dynamic leg swings for hip mobility',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-leg-swings-front-back'],
     instructions: [
       'Hold onto a wall or stable surface for balance',
       'Swing one leg forward and backward',
@@ -142,6 +152,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Leg Swings (Side Swings)',
     description: 'Lateral leg swings for hip abduction',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-leg-swings-side'],
     instructions: [
       'Hold onto a wall or stable surface for balance',
       'Swing one leg side to side across your body',
@@ -157,6 +168,7 @@ export const warmupExercises: Exercise[] = [
     name: 'Spider Lunges',
     description: 'Dynamic lunge variation for hip mobility',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['warmup-spider-lunges'],
     instructions: [
       'Start in a high plank position',
       'Bring one foot forward outside your hand',
@@ -172,6 +184,7 @@ export const warmupExercises: Exercise[] = [
     name: 'High Knees (Running in Place)',
     description: 'Cardiovascular warm-up exercise',
     mechanic: 'timed',
+    imageUrl: exerciseImageMap['warmup-high-knees'],
     instructions: [
       'Stand with feet hip-width apart',
       'Run in place, bringing knees up high',
@@ -190,6 +203,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Paschimottanasana (Seated Forward Bend)',
     description: 'Deep hamstring and lower back stretch',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-seated-forward-bend'],
     instructions: [
       'Sit on the floor with legs extended in front',
       'Inhale and lengthen your spine',
@@ -206,6 +220,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Baddha Konasana (Bound Angle Pose / Cobbler Pose)',
     description: 'Hip opener and inner thigh stretch',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-bound-angle'],
     instructions: [
       'Sit with soles of feet together, knees falling to sides',
       'Hold feet with hands and sit up tall',
@@ -222,6 +237,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Bhujangasana (Cobra Pose)',
     description: 'Backbend that stretches the chest and strengthens the back',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-cobra-pose'],
     instructions: [
       'Lie face down with hands under shoulders',
       'Press into hands and lift chest off the ground',
@@ -238,6 +254,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Parsva Urdhva Hastasana (Standing Side Bend)',
     description: 'Lateral stretch for the obliques and intercostals',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-standing-side-bend'],
     instructions: [
       'Stand with feet hip-width apart',
       'Raise arms overhead, interlace fingers',
@@ -254,6 +271,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Pec Stretch (Behind the Back Elbow to Elbow Grip)',
     description: 'Deep chest and shoulder stretch',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-pec-stretch-behind-back'],
     instructions: [
       'Stand tall with good posture',
       'Reach both arms behind your back',
@@ -270,6 +288,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Pec Stretch (Doorway Pec Stretch)',
     description: 'Alternative chest stretch using a doorway',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-doorway-pec-stretch'],
     instructions: [
       'Stand in a doorway with arm bent at 90 degrees',
       'Place forearm against door frame',
@@ -286,6 +305,7 @@ export const cooldownExercises: Exercise[] = [
     name: 'Dhanurasana (Bow Pose)',
     description: 'Full body backbend stretch',
     mechanic: 'hold',
+    imageUrl: exerciseImageMap['cooldown-bow-pose'],
     instructions: [
       'Lie face down on the floor',
       'Bend knees and reach back to grab ankles',

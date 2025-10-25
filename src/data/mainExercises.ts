@@ -1,4 +1,5 @@
 import { Exercise } from '../types/workout';
+import { exerciseImageMap } from './exerciseImages';
 
 export const mainExercises: Exercise[] = [
   {
@@ -6,6 +7,7 @@ export const mainExercises: Exercise[] = [
     name: 'Free Squats',
     description: 'Basic squat movement targeting lower body muscles',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-free-squats'],
     instructions: [
       'Stand with feet shoulder-width apart',
       'Keep your chest up and back straight',
@@ -23,6 +25,7 @@ export const mainExercises: Exercise[] = [
     name: 'Single Leg Standing Calf Raise',
     description: 'Calf exercise using one leg at a time',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-single-leg-calf-raise'],
     instructions: [
       'Stand on one leg, holding something for balance if needed',
       'Raise up onto the ball of your foot as high as possible',
@@ -39,6 +42,7 @@ export const mainExercises: Exercise[] = [
     name: 'Inverted Rows',
     description: 'Pulling exercise targeting upper back muscles',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-inverted-rows'],
     instructions: [
       'Position yourself under a sturdy horizontal bar',
       'Grip bar with hands slightly wider than shoulder-width',
@@ -56,6 +60,7 @@ export const mainExercises: Exercise[] = [
     name: 'Push Ups',
     description: 'Classic pushing exercise for chest, shoulders, and triceps',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-push-ups'],
     instructions: [
       'Start in high plank with hands slightly wider than shoulders',
       'Keep body in straight line from head to heels',
@@ -73,6 +78,7 @@ export const mainExercises: Exercise[] = [
     name: 'Regressed Push Ups',
     description: 'Modified push-up for beginners (knee or wall)',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-regressed-push-ups'],
     instructions: [
       'Start on hands and knees with hands shoulder-width apart',
       'Keep body straight from head to knees',
@@ -90,6 +96,7 @@ export const mainExercises: Exercise[] = [
     name: 'Prone Alternate Arm and Leg Raise',
     description: 'Core exercise engaging lower back and glutes',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-prone-alternate-arm-leg-raise'],
     instructions: [
       'Lie face down with arms extended overhead',
       'Simultaneously raise opposite arm and leg off ground',
@@ -108,6 +115,7 @@ export const mainExercises: Exercise[] = [
     name: 'Partial Crunches',
     description: 'Core exercise targeting abdominal muscles',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-partial-crunches'],
     instructions: [
       'Lie on back with knees bent, feet flat on floor',
       'Place hands behind head or across chest',
@@ -125,6 +133,7 @@ export const mainExercises: Exercise[] = [
     name: 'Grip and Hang',
     description: 'Hanging exercise building grip strength',
     mechanic: 'failure',
+    imageUrl: exerciseImageMap['exercise-grip-and-hang'],
     instructions: [
       'Find sturdy horizontal bar where feet don\'t touch ground',
       'Grip bar with both hands shoulder-width apart',
@@ -140,6 +149,7 @@ export const mainExercises: Exercise[] = [
     name: 'Jogging',
     description: 'Cardiovascular exercise at steady pace',
     mechanic: 'timed',
+    imageUrl: exerciseImageMap['exercise-jogging'],
     instructions: [
       'Find a flat surface or track',
       'Start at a comfortable pace you can maintain',
@@ -158,6 +168,7 @@ export const mainExercises: Exercise[] = [
     name: 'Standing Calf Raise',
     description: 'Calf exercise using both legs',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-standing-calf-raise'],
     instructions: [
       'Stand with feet shoulder-width apart',
       'Can hold onto wall or stable surface for balance',
@@ -176,6 +187,7 @@ export const mainExercises: Exercise[] = [
     name: 'Back / Goblet Squats with Weight',
     description: 'Squats with added weight for progression',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-goblet-squats'],
     instructions: [
       'Hold weight at chest level (goblet) or across shoulders (back squat)',
       'Stand with feet shoulder-width apart',
@@ -194,6 +206,7 @@ export const mainExercises: Exercise[] = [
     name: 'Inverted Rows with Weight',
     description: 'Inverted rows with added resistance',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-inverted-rows-weighted'],
     instructions: [
       'Position yourself under a sturdy horizontal bar',
       'Wear a weighted vest or backpack with weight',
@@ -212,6 +225,7 @@ export const mainExercises: Exercise[] = [
     name: 'Push Ups with Weight',
     description: 'Push-ups with added resistance',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-push-ups-weighted'],
     instructions: [
       'Start in high plank with hands slightly wider than shoulders',
       'Place weight plate on back or wear weighted vest',
@@ -230,6 +244,7 @@ export const mainExercises: Exercise[] = [
     name: 'Full Crunches',
     description: 'Complete crunch movement with full range',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-full-crunches'],
     instructions: [
       'Lie on back with knees bent, feet flat on floor',
       'Place hands behind head',
@@ -248,6 +263,7 @@ export const mainExercises: Exercise[] = [
     name: 'Grip and Hang with Weight',
     description: 'Hanging exercise with added weight',
     mechanic: 'failure',
+    imageUrl: exerciseImageMap['exercise-grip-and-hang-weighted'],
     instructions: [
       'Find sturdy horizontal bar where feet don\'t touch ground',
       'Wear weighted vest or hold dumbbell between feet',
@@ -264,6 +280,7 @@ export const mainExercises: Exercise[] = [
     name: 'Pinch Holds',
     description: 'Grip strength exercise using pinch grip',
     mechanic: 'failure',
+    imageUrl: exerciseImageMap['exercise-pinch-holds'],
     instructions: [
       'Take two weight plates or thick books',
       'Pinch them together with thumb on one side, fingers on other',
@@ -280,6 +297,7 @@ export const mainExercises: Exercise[] = [
     name: 'Superman Hold',
     description: 'Isometric back extension hold',
     mechanic: 'failure',
+    imageUrl: exerciseImageMap['exercise-superman-hold'],
     instructions: [
       'Lie face down with arms extended overhead',
       'Simultaneously raise arms, chest, and legs off ground',
@@ -296,6 +314,7 @@ export const mainExercises: Exercise[] = [
     name: 'Wide Grip Chin Up',
     description: 'Pull-up with wide overhand grip',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-wide-grip-chin-up'],
     instructions: [
       'Grip pull-up bar with hands wider than shoulders',
       'Use overhand (pronated) grip',
@@ -314,6 +333,7 @@ export const mainExercises: Exercise[] = [
     name: 'Parallel Bar Dip',
     description: 'Dipping exercise for chest and triceps',
     mechanic: 'reps',
+    imageUrl: exerciseImageMap['exercise-parallel-bar-dip'],
     instructions: [
       'Grip parallel bars and lift yourself up',
       'Start with arms straight, body vertical',

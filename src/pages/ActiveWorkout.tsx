@@ -45,6 +45,14 @@ const ActiveWorkout: React.FC = () => {
   // Initialize reps when exercise changes
   useEffect(() => {
     if (currentExercise) {
+      console.log('🏋️ Current Exercise:', {
+        id: currentExercise.id,
+        name: currentExercise.name,
+        imageUrl: currentExercise.imageUrl,
+        hasImageUrl: !!currentExercise.imageUrl,
+        sectionType: currentSection?.type,
+      });
+      
       setReps(currentExercise.defaultReps || 0);
       setCurrentSet(1);
       setCompletedSets(0);
@@ -57,7 +65,7 @@ const ActiveWorkout: React.FC = () => {
       // Announce new exercise start
       voiceService.announceExerciseStart(currentExercise.name, 1);
     }
-  }, [currentExercise]);
+  }, [currentExercise, currentSection?.type]);
 
   // Timer for timed exercises
   useEffect(() => {
@@ -305,31 +313,31 @@ const ActiveWorkout: React.FC = () => {
         <div className="max-w-xl mx-auto">
           <div className="flex justify-between items-center mb-2">
             <div>
-              <h1 className="text-lg font-bold text-gray-900">{currentSection.title}</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-base font-bold text-gray-900">{currentSection.title}</h1>
+              <p className="text-xs text-gray-500">
                 Exercise {completedExercises + 1} of {totalExercises}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {voiceCommandsActive && (
-                <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg">
+                <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white px-2.5 py-1 rounded-full text-[10px] font-medium shadow-lg">
                   <div className="relative">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 w-2.5 h-2.5 bg-white rounded-full animate-ping"></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 w-2 h-2 bg-white rounded-full animate-ping"></div>
                   </div>
                   <span>🎤 Voice Active</span>
                 </div>
               )}
               <button
                 onClick={() => setShowVoiceSettings(true)}
-                className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors"
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-1.5 rounded-lg transition-colors text-lg"
                 title="Voice Settings"
               >
                 🎙️
               </button>
               <div className="text-right">
-                <div className="text-sm font-medium text-blue-600">{formatTime(elapsedTime)}</div>
-                <div className="text-xs text-gray-500">Total Time</div>
+                <div className="text-xs font-medium text-blue-600">{formatTime(elapsedTime)}</div>
+                <div className="text-[10px] text-gray-500">Total Time</div>
               </div>
             </div>
           </div>
@@ -353,8 +361,8 @@ const ActiveWorkout: React.FC = () => {
         {/* Voice Commands Tip for "To Failure" Exercises */}
         {voiceCommandsActive && currentExercise.mechanic === 'failure' && (
           <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-4 text-center">
-            <div className="text-blue-800 font-semibold text-sm mb-1">💡 Voice Command Tip</div>
-            <div className="text-blue-700 text-xs">
+            <div className="text-blue-800 font-semibold text-xs mb-1">💡 Voice Command Tip</div>
+            <div className="text-blue-700 text-[10px]">
               Say <strong>"Complete"</strong> or <strong>"Done"</strong> when you reach failure
             </div>
           </div>
@@ -362,10 +370,10 @@ const ActiveWorkout: React.FC = () => {
 
         {/* Rest Timer Banner */}
         {isResting && restTimer > 0 && (
-          <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 mb-4 text-center animate-pulse">
-            <div className="text-yellow-800 font-bold text-lg mb-1">⏸️ Rest Period</div>
-            <div className="text-4xl font-bold text-yellow-600 mb-1">{restTimer}s</div>
-            <div className="text-sm text-yellow-700">Prepare for set {currentSet}</div>
+          <div className="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 mb-4 text-center animate-pulse">
+            <div className="text-yellow-800 font-bold text-base mb-1">⏸️ Rest Period</div>
+            <div className="text-3xl font-bold text-yellow-600 mb-1">{restTimer}s</div>
+            <div className="text-xs text-yellow-700">Prepare for set {currentSet}</div>
           </div>
         )}
 
@@ -381,11 +389,11 @@ const ActiveWorkout: React.FC = () => {
                     : 'bg-purple-400'
               }`}
             ></span>
-            <h2 className="text-2xl font-bold text-center text-gray-800">{currentExercise.name}</h2>
+            <h2 className="text-xl font-bold text-center text-gray-800">{currentExercise.name}</h2>
           </div>
-
           {/* Exercise Image/GIF */}
           <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden" style={{ height: '240px' }}>
+            
             {currentExercise.imageUrl || currentExercise.videoUrl ? (
               <div className="w-full h-full">
                 {currentExercise.videoUrl ? (
@@ -395,16 +403,25 @@ const ActiveWorkout: React.FC = () => {
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : currentExercise.imageUrl ? (
                   <img
                     src={currentExercise.imageUrl}
                     alt={currentExercise.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
+                    onLoad={() => {
+                      console.log('✅ Image loaded successfully:', currentExercise.imageUrl);
+                    }}
                     onError={(e) => {
                       // Fallback if image fails to load
                       (e.target as HTMLImageElement).style.display = 'none';
+                      console.error('❌ Exercise image failed to load:', {
+                        exerciseId: currentExercise.id,
+                        exerciseName: currentExercise.name,
+                        imageUrl: currentExercise.imageUrl,
+                        sectionType: currentSection?.type,
+                      });
                       const parent = (e.target as HTMLImageElement).parentElement;
                       if (parent) {
                         parent.innerHTML = `
@@ -429,7 +446,6 @@ const ActiveWorkout: React.FC = () => {
               </div>
             )}
           </div>
-
           {/* Instructions Toggle */}
           {currentExercise.instructions && currentExercise.instructions.length > 0 && (
             <div className="mb-4">
@@ -437,13 +453,13 @@ const ActiveWorkout: React.FC = () => {
                 onClick={() => setShowInstructions(!showInstructions)}
                 className="w-full flex items-center justify-between px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
               >
-                <span className="font-medium">📋 Exercise Instructions</span>
-                <span className="text-xl">{showInstructions ? '▲' : '▼'}</span>
+                <span className="font-medium text-sm">📋 Exercise Instructions</span>
+                <span className="text-lg">{showInstructions ? '▲' : '▼'}</span>
               </button>
 
               {showInstructions && (
                 <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                  <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                  <ol className="list-decimal list-inside space-y-2 text-xs text-gray-700">
                     {currentExercise.instructions.map((instruction, idx) => (
                       <li key={idx} className="leading-relaxed">
                         {instruction}
@@ -454,57 +470,54 @@ const ActiveWorkout: React.FC = () => {
               )}
             </div>
           )}
-
           {/* Set Counter */}
           <div className="bg-gray-50 rounded-lg p-4 mb-4 text-center">
-            <div className="text-sm text-gray-600 mb-1">Current Set</div>
-            <div className="text-3xl font-bold text-blue-600">
+            <div className="text-xs text-gray-600 mb-1">Current Set</div>
+            <div className="text-2xl font-bold text-blue-600">
               {currentSet} / {totalSets}
             </div>
             {completedSets > 0 && (
-              <div className="text-sm text-green-600 mt-1">
+              <div className="text-xs text-green-600 mt-1">
                 ✓ {completedSets} set{completedSets > 1 ? 's' : ''} completed
               </div>
             )}
           </div>
-
           {/* Exercise Controls based on mechanic */}
           {currentExercise.mechanic === 'reps' && (
             <div className="mb-4">
-              <label className="block text-center text-gray-700 font-medium mb-2">Reps</label>
+              <label className="block text-center text-gray-700 font-medium mb-2 text-sm">Reps</label>
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => setReps(Math.max(1, reps - 1))}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-12 h-12 rounded-full text-xl font-bold"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-10 h-10 rounded-full text-lg font-bold"
                 >
                   −
                 </button>
-                <div className="bg-white border-2 border-blue-500 w-20 h-20 rounded-lg flex items-center justify-center">
-                  <span className="text-3xl font-bold text-blue-600">{reps}</span>
+                <div className="bg-white border-2 border-blue-500 w-16 h-16 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-blue-600">{reps}</span>
                 </div>
                 <button
                   onClick={() => setReps(reps + 1)}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-12 h-12 rounded-full text-xl font-bold"
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-10 h-10 rounded-full text-lg font-bold"
                 >
                   +
                 </button>
               </div>
-              <div className="text-center text-sm text-gray-500 mt-2">
+              <div className="text-center text-xs text-gray-500 mt-2">
                 Target: {currentExercise.defaultReps} reps
               </div>
             </div>
           )}
-
           {(currentExercise.mechanic === 'timed' ||
             currentExercise.mechanic === 'hold' ||
             currentExercise.mechanic === 'failure') && (
             <div className="mb-4">
               <div className="text-center">
-                <div className="text-5xl font-bold text-blue-600 mb-4">{formatTime(timer)}</div>
-                <div className="flex justify-center gap-3 mb-3">
+                <div className="text-4xl font-bold text-blue-600 mb-3">{formatTime(timer)}</div>
+                <div className="flex justify-center gap-2 mb-2">
                   <button
                     onClick={() => setIsTimerActive(!isTimerActive)}
-                    className={`px-6 py-3 rounded-lg font-medium ${
+                    className={`px-5 py-2.5 rounded-lg font-medium text-sm ${
                       isTimerActive
                         ? 'bg-red-500 hover:bg-red-600 text-white'
                         : 'bg-green-500 hover:bg-green-600 text-white'
@@ -517,23 +530,22 @@ const ActiveWorkout: React.FC = () => {
                       setTimer(0);
                       setIsTimerActive(false);
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-medium"
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2.5 rounded-lg font-medium text-sm"
                   >
                     ↺ Reset
                   </button>
                 </div>
                 {currentExercise.defaultDuration && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs text-gray-600">
                     Target: {formatTime(currentExercise.defaultDuration)}
                   </div>
                 )}
               </div>
             </div>
           )}
-
           {/* Rest Timer between sets */}
           {completedSets > 0 && completedSets < totalSets && currentExercise.restBetweenSets && (
-            <div className="text-center text-sm text-gray-600 mb-3">
+            <div className="text-center text-xs text-gray-600 mb-3">
               Rest {currentExercise.restBetweenSets}s before next set
             </div>
           )}
@@ -544,7 +556,7 @@ const ActiveWorkout: React.FC = () => {
           <button
             onClick={previousExercise}
             disabled={!canGoBack}
-            className={`flex-1 py-3 px-4 rounded-lg font-medium ${
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm ${
               !canGoBack
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
@@ -554,7 +566,7 @@ const ActiveWorkout: React.FC = () => {
           </button>
           <button
             onClick={skipExercise}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-lg font-medium"
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2.5 px-4 rounded-lg font-medium text-sm"
           >
             Skip →
           </button>
@@ -569,7 +581,7 @@ const ActiveWorkout: React.FC = () => {
         <div className="max-w-xl mx-auto">
           <button
             onClick={handleCompleteSet}
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-md text-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 px-6 rounded-lg transition-colors shadow-md text-base"
           >
             {currentSet < totalSets ? `✓ Complete Set ${currentSet}` : '✓ Complete Exercise'}
           </button>
