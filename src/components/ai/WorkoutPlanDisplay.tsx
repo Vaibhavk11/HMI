@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { WorkoutPlan, WorkoutDay, Exercise } from '../../types/userProfile';
+import { WorkoutPlan } from '../../types/userProfile';
 
 interface WorkoutPlanDisplayProps {
     plan: WorkoutPlan;

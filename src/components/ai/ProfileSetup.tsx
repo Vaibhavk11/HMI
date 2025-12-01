@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Gender, FitnessGoal, WorkoutPreference, DietaryPreference, Region, ActivityLevel } from '../../types/userProfile';
+import { UserProfile } from '../../types/userProfile';
 import { useUserProfile } from '../../contexts/UserProfileContext';
 
 const ProfileSetup: React.FC = () => {

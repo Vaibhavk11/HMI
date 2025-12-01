@@ -92,7 +92,7 @@ export const generateWorkoutPlan = async (profile: UserProfile): Promise<Workout
     }
 };
 
-const getMockDietPlan = (profile: UserProfile): DietPlan => {
+const getMockDietPlan = (_profile: UserProfile): DietPlan => {
     return {
         id: 'mock-diet-id',
         createdAt: new Date(),

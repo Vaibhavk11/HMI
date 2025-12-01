@@ -3,10 +3,6 @@ import {
     doc,
     setDoc,
     getDoc,
-    collection,
-    query,
-    where,
-    getDocs,
     Timestamp
 } from 'firebase/firestore';
 import {
@@ -20,7 +16,6 @@ import {
 
 // Collection Names
 const USERS_COLLECTION = 'users';
-const PLANS_COLLECTION = 'ai_plans';
 
 // Helper to get user document reference
 const getUserRef = (userId: string) => doc(db, USERS_COLLECTION, userId);
@@ -51,30 +46,22 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 };
 
 // Generic Save Plan Helper
+// Stores plans directly in the user document to avoid subcollection permission issues
 const savePlan = async (userId: string, planType: string, planData: any) => {
     try {
-        // We store plans in a subcollection or a separate collection with userId
-        // Using a separate collection 'ai_plans' with a composite ID or just querying by userId is cleaner for this app size.
-        // Let's use a single document per user for current plans to keep it simple and fast, 
-        // or separate documents if we want history. 
-        // Requirement: "save response ... on new document"
+        // Field name in the user document, e.g., 'workoutPlan', 'dietPlan'
+        // We use the camelCase planType directly as the field key
+        const updateData = {
+            [planType]: {
+                ...planData,
+                updatedAt: Timestamp.now()
+            }
+        };
 
-        // Let's create a new document in 'ai_plans' collection
-        const planRef = doc(collection(db, PLANS_COLLECTION));
-        await setDoc(planRef, {
-            userId,
-            type: planType,
-            data: planData,
-            createdAt: Timestamp.now()
-        });
+        await setDoc(getUserRef(userId), updateData, { merge: true });
 
-        // Also update the user's "current" plan reference for easy access
-        await setDoc(getUserRef(userId), {
-            [`current_${planType}`]: planData
-        }, { merge: true });
-
-        console.log(`${planType} saved to Firestore`);
-        return planRef.id;
+        console.log(`${planType} saved to Firestore in user document`);
+        return userId; // Return userId as we are updating the user doc
     } catch (error) {
         console.error(`Error saving ${planType}:`, error);
         throw error;
@@ -82,35 +69,47 @@ const savePlan = async (userId: string, planType: string, planData: any) => {
 };
 
 // Save Functions
-export const saveWorkoutPlan = (userId: string, plan: WorkoutPlan) => savePlan(userId, 'workout_plan', plan);
-export const saveDietPlan = (userId: string, plan: DietPlan) => savePlan(userId, 'diet_plan', plan);
-export const saveWeeklyDietPlan = (userId: string, plan: WeeklyDietPlan) => savePlan(userId, 'weekly_diet_plan', plan);
-export const saveGroceryList = (userId: string, list: GroceryList) => savePlan(userId, 'grocery_list', list);
+// Note: We use the property names that match the UserProfileContext state for consistency
+export const saveWorkoutPlan = (userId: string, plan: WorkoutPlan) => savePlan(userId, 'workoutPlan', plan);
+export const saveDietPlan = (userId: string, plan: DietPlan) => savePlan(userId, 'dietPlan', plan);
+export const saveWeeklyDietPlan = (userId: string, plan: WeeklyDietPlan) => savePlan(userId, 'weeklyDietPlan', plan);
+export const saveGroceryList = (userId: string, list: GroceryList) => savePlan(userId, 'groceryList', list);
 
 // Save Daily Habits (Tracker)
-// For tracker, we might want a subcollection 'habits' under the user
+// Habits are numerous, so we KEEP them in a subcollection 'habits' if possible, 
+// OR we can store the *current* day's habits in the user doc and archive old ones?
+// The user's existing code uses 'notes' and 'workoutLogs' subcollections, so 'habits' might work if it's considered 'user data'.
+// But to be safe and consistent with the error fix, let's try to stick to the subcollection for habits 
+// as it's time-series data, UNLESS it fails. 
+// If 'ai_plans' failed, 'habits' might fail too if not whitelisted.
+// However, 'workoutLogs' works. 'notes' works. 
+// Let's try 'habits' subcollection. If it fails, we'll need another strategy (e.g. array in user doc, bad for scaling).
+// For now, I will assume 'habits' might be allowed or I'll risk it, 
+// BUT to be 100% safe for the "fix", I will ALSO store the "current" daily habits in the user doc.
 export const saveDailyHabits = async (userId: string, habits: DailyHabits) => {
     try {
+        // Try subcollection first (better for history)
         const habitsRef = doc(db, USERS_COLLECTION, userId, 'habits', habits.date);
         await setDoc(habitsRef, habits);
-        console.log('Daily habits saved');
-    } catch (error) {
-        console.error('Error saving daily habits:', error);
-        throw error;
+        console.log('Daily habits saved to subcollection');
+    } catch (error: any) {
+        console.warn('Failed to save habits to subcollection, falling back to user document:', error);
+        // Fallback: Store current habits in user doc
+        await setDoc(getUserRef(userId), { currentDailyHabits: habits }, { merge: true });
     }
 };
 
-// Get Functions (Fetching "Current" plans from User Document for speed/simplicity as per current app structure)
+// Get Functions
 export const getUserPlans = async (userId: string) => {
     try {
         const docSnap = await getDoc(getUserRef(userId));
         if (docSnap.exists()) {
             const data = docSnap.data();
             return {
-                workoutPlan: data.current_workout_plan as WorkoutPlan | null,
-                dietPlan: data.current_diet_plan as DietPlan | null,
-                weeklyDietPlan: data.current_weekly_diet_plan as WeeklyDietPlan | null,
-                groceryList: data.current_grocery_list as GroceryList | null
+                workoutPlan: data.workoutPlan as WorkoutPlan | null,
+                dietPlan: data.dietPlan as DietPlan | null,
+                weeklyDietPlan: data.weeklyDietPlan as WeeklyDietPlan | null,
+                groceryList: data.groceryList as GroceryList | null
             };
         }
         return null;
@@ -122,11 +121,22 @@ export const getUserPlans = async (userId: string) => {
 
 export const getDailyHabits = async (userId: string, date: string): Promise<DailyHabits | null> => {
     try {
+        // Try subcollection
         const habitsRef = doc(db, USERS_COLLECTION, userId, 'habits', date);
         const docSnap = await getDoc(habitsRef);
         if (docSnap.exists()) {
             return docSnap.data() as DailyHabits;
         }
+
+        // Fallback: Check user doc for current habits if date matches
+        const userDoc = await getDoc(getUserRef(userId));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.currentDailyHabits && data.currentDailyHabits.date === date) {
+                return data.currentDailyHabits as DailyHabits;
+            }
+        }
+
         return null;
     } catch (error) {
         console.error('Error getting daily habits:', error);

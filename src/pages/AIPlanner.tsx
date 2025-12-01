@@ -10,7 +10,7 @@ import GroceryListDisplay from '../components/ai/GroceryListDisplay';
 import DailyGoalProgress from '../components/ai/DailyGoalProgress';
 import HabitTracker from '../components/ai/HabitTracker';
 import AIChatCoach from '../components/ai/AIChatCoach';
-import { generateWorkoutPlan, generateDietPlan, generateWeeklyDietPlan, generateGroceryList } from '../services/ai';
+import { generateWorkoutPlan, generateDietPlan, generateWeeklyDietPlan } from '../services/ai';
 
 const AIPlanner: React.FC = () => {
     const {
@@ -22,7 +22,6 @@ const AIPlanner: React.FC = () => {
         updateWorkoutPlan,
         updateDietPlan,
         updateWeeklyDietPlan,
-        updateGroceryList,
         loading
     } = useUserProfile();
     const [activeTab, setActiveTab] = useState<'profile' | 'workout' | 'diet' | 'tracker' | 'chat'>('profile');
@@ -35,9 +34,9 @@ const AIPlanner: React.FC = () => {
         try {
             const plan = await generateWorkoutPlan(profile);
             await updateWorkoutPlan(plan);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Failed to generate workout plan. Please try again.');
+            alert(`Failed to generate workout plan: ${error.message || 'Unknown error'}`);
         } finally {
             setIsGenerating(false);
         }
